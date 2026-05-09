@@ -6,6 +6,7 @@ public record AppliedMapCommandDto(
         String type,
         CellRefDto cell,
         TerrainType terrain,
-        Boolean terrainHidden
+        Boolean terrainHidden,
+        Boolean featureHidden
 ) {
 }

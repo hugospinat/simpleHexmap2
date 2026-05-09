@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useTerrainSlice } from "./hooks/useTerrainSlice";
-import { projectRenderModel } from "./model/projectRenderModel";
-import { mountPreviewScene } from "./pixiPreview";
+import { useMapSlice } from "../application/useMapSlice";
+import { projectRenderModel } from "../render/projectRenderModel";
+import { mountPreviewScene } from "../render/pixiPreview";
 
 const decisions = [
   "Server authority with last-write-wins sequencing",
@@ -22,8 +22,9 @@ function App() {
     setRole,
     repaintCell,
     setTerrainVisibility,
+    setFeatureVisibility,
     refresh
-  } = useTerrainSlice();
+  } = useMapSlice();
   const renderModel = useMemo(
     () => (snapshot ? projectRenderModel(snapshot) : null),
     [snapshot]
@@ -99,7 +100,18 @@ function App() {
             }}
             disabled={role !== "gm" || !firstCell || isLoading || isMutating}
           >
-            {isMutating ? "Applying fog..." : "Toggle first cell fog"}
+              {isMutating ? "Applying fog..." : "Toggle first cell fog"}
+            </button>
+          <button
+            className="action-button action-button-secondary"
+            onClick={() => {
+              if (firstCell) {
+                setFeatureVisibility(firstCell.q, firstCell.r, !firstCell.featureHidden);
+              }
+            }}
+            disabled={role !== "gm" || !firstCell || isLoading || isMutating}
+          >
+            {isMutating ? "Applying feature mask..." : "Toggle first cell feature"}
           </button>
           <p className="status-line">
             {snapshot
@@ -113,7 +125,7 @@ function App() {
       <section className="canvas-panel">
         <header>
           <p className="eyebrow">Pixi surface</p>
-          <h2>Terrain layer preview</h2>
+          <h2>Terrain and feature visibility preview</h2>
         </header>
         {!renderModel ? <p className="canvas-empty">Waiting for the backend snapshot.</p> : null}
         <div className="canvas-host" ref={canvasHostRef} />

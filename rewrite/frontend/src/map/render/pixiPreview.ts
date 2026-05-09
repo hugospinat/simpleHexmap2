@@ -1,5 +1,5 @@
 import { Application, Color, Container, Graphics, Text } from "pixi.js";
-import type { RenderModel } from "./model/renderModel";
+import type { RenderModel } from "./renderModel";
 
 function drawHex(graphics: Graphics, x: number, y: number, radius: number, fill: number) {
   const angleOffset = Math.PI / 6;
@@ -16,6 +16,11 @@ function drawHex(graphics: Graphics, x: number, y: number, radius: number, fill:
   graphics.closePath();
   graphics.fill(fill);
   graphics.stroke({ color: 0xf8e7b9, width: 2, alpha: 0.6 });
+}
+
+function drawFeatureMarker(graphics: Graphics, x: number, y: number) {
+  graphics.circle(x, y, 18);
+  graphics.stroke({ color: 0xb57cff, width: 4, alpha: 0.95 });
 }
 
 function projectAxialToScreen(q: number, r: number) {
@@ -75,12 +80,18 @@ export async function mountPreviewScene(host: HTMLDivElement, renderModel: Rende
     }
     root.addChild(hex);
 
+    if (tile.featureHidden) {
+      const marker = new Graphics();
+      drawFeatureMarker(marker, position.x, position.y);
+      root.addChild(marker);
+    }
+
     const label = new Text({
-      text: tile.label,
+      text: tile.visibilityLabel ? `${tile.label}\n${tile.visibilityLabel}` : tile.label,
       style: {
         fill: "#f9f6ef",
         fontFamily: "Georgia, serif",
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: "700"
       }
     });

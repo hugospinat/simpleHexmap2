@@ -48,6 +48,16 @@
 }
 ```
 
+```json
+{
+  "type": "set_cell_feature_visibility",
+  "operationId": "uuid",
+  "actorRole": "gm",
+  "cell": { "q": 0, "r": 0 },
+  "featureHidden": true
+}
+```
+
 ## First slice server events
 
 WebSocket endpoint:
@@ -88,7 +98,7 @@ Sent on connect or when the client must resync from authority.
 }
 ```
 
-The same `command_applied` envelope is also used for `set_cell_visibility` with `terrainHidden` instead of `terrain`.
+The same `command_applied` envelope is also used for `set_cell_visibility` with `terrainHidden` instead of `terrain`, and for `set_cell_feature_visibility` with `featureHidden`.
 
 ### `command_rejected`
 

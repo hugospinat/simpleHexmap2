@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import { applyTerrainCommand, applyVisibilityCommand, connectMapRealtime, fetchMapSnapshot } from "../api/mapApi";
-import { applyOptimisticTerrain } from "../model/applyOptimisticTerrain";
-import { applyOptimisticVisibility } from "../model/applyOptimisticVisibility";
-import { applyRealtimeMessage } from "../model/applyRealtimeMessage";
-import type { ActorRole, MapSnapshotDto, TerrainType } from "../model/transport";
+import {
+  applyFeatureVisibilityCommand,
+  applyTerrainCommand,
+  applyVisibilityCommand,
+  connectMapRealtime,
+  fetchMapSnapshot
+} from "../transport/mapApi";
+import { applyOptimisticFeatureVisibility, applyOptimisticVisibility } from "./applyOptimisticVisibility";
+import { applyOptimisticTerrain } from "./applyOptimisticTerrain";
+import { applyRealtimeMessage } from "./applyRealtimeMessage";
+import type { ActorRole, MapSnapshotDto, TerrainType } from "../transport/dto";
 
 type RealtimeStatus = "connecting" | "open" | "closed" | "error";
 
-type TerrainSliceState = {
+type MapSliceState = {
   snapshot: MapSnapshotDto | null;
   error: string | null;
   isLoading: boolean;
@@ -17,10 +23,11 @@ type TerrainSliceState = {
   setRole: (role: "gm" | "player") => void;
   repaintCell: (q: number, r: number, terrain: TerrainType) => void;
   setTerrainVisibility: (q: number, r: number, terrainHidden: boolean) => void;
+  setFeatureVisibility: (q: number, r: number, featureHidden: boolean) => void;
   refresh: () => void;
 };
 
-export function useTerrainSlice(): TerrainSliceState {
+export function useMapSlice(): MapSliceState {
   const [snapshot, setSnapshot] = useState<MapSnapshotDto | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -105,6 +112,23 @@ export function useTerrainSlice(): TerrainSliceState {
     });
   };
 
+  const setFeatureVisibility = (q: number, r: number, featureHidden: boolean) => {
+    const operationId = crypto.randomUUID();
+    setError(null);
+    setPendingOperationIds((current) => [...current, operationId]);
+    setSnapshot((currentSnapshot) =>
+      applyOptimisticFeatureVisibility(currentSnapshot, q, r, featureHidden)
+    );
+
+    void applyFeatureVisibilityCommand(operationId, { q, r }, featureHidden, role).catch(
+      (commandError: Error) => {
+        setPendingOperationIds((current) => current.filter((value) => value !== operationId));
+        setError(commandError.message);
+        loadSnapshot();
+      }
+    );
+  };
+
   return {
     snapshot,
     error,
@@ -115,6 +139,7 @@ export function useTerrainSlice(): TerrainSliceState {
     setRole,
     repaintCell,
     setTerrainVisibility,
+    setFeatureVisibility,
     refresh: loadSnapshot
   };
 }

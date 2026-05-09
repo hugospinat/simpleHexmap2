@@ -1,4 +1,4 @@
-import type { MapSnapshotDto, TerrainType } from "./transport";
+import type { MapSnapshotDto, TerrainType } from "../transport/dto";
 
 export function applyOptimisticTerrain(
   snapshot: MapSnapshotDto | null,

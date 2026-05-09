@@ -2,11 +2,12 @@ import type {
   ActorRole,
   CellVisibilityCommandRequestDto,
   CommandAppliedResponseDto,
+  FeatureVisibilityCommandRequestDto,
   MapSnapshotDto,
   RealtimeMessageDto,
   TerrainCommandRequestDto,
   TerrainType
-} from "../model/transport";
+} from "./dto";
 
 const API_ROOT = "/api/maps";
 const MAP_ID = "demo-map";
@@ -67,6 +68,31 @@ export async function applyVisibilityCommand(
     actorRole,
     cell,
     terrainHidden
+  };
+
+  const response = await fetch(`${API_ROOT}/${MAP_ID}/commands`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(command)
+  });
+
+  return parseJsonResponse<CommandAppliedResponseDto>(response);
+}
+
+export async function applyFeatureVisibilityCommand(
+  operationId: string,
+  cell: { q: number; r: number },
+  featureHidden: boolean,
+  actorRole: ActorRole = "gm"
+): Promise<CommandAppliedResponseDto> {
+  const command: FeatureVisibilityCommandRequestDto = {
+    type: "set_cell_feature_visibility",
+    operationId,
+    actorRole,
+    cell,
+    featureHidden
   };
 
   const response = await fetch(`${API_ROOT}/${MAP_ID}/commands`, {

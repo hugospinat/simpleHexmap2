@@ -38,18 +38,35 @@ export type CellVisibilityCommandRequestDto = {
   terrainHidden: boolean;
 };
 
+export type FeatureVisibilityCommandRequestDto = {
+  type: "set_cell_feature_visibility";
+  operationId: string;
+  actorRole: ActorRole;
+  cell: CellRefDto;
+  featureHidden: boolean;
+};
+
 export type AppliedCommandDto =
   | {
       type: "set_cell_terrain";
       cell: CellRefDto;
       terrain: TerrainType;
       terrainHidden: null;
+      featureHidden: null;
     }
   | {
       type: "set_cell_visibility";
       cell: CellRefDto;
       terrain: null;
       terrainHidden: boolean;
+      featureHidden: null;
+    }
+  | {
+      type: "set_cell_feature_visibility";
+      cell: CellRefDto;
+      terrain: null;
+      terrainHidden: null;
+      featureHidden: boolean;
     };
 
 export type CommandAppliedResponseDto = {

@@ -8,6 +8,7 @@ import io.simplehex.map.transport.AppliedMapCommandDto;
 import io.simplehex.map.transport.CellRefDto;
 import io.simplehex.map.transport.CellVisibilityCommandRequest;
 import io.simplehex.map.transport.CommandAppliedResponse;
+import io.simplehex.map.transport.FeatureVisibilityCommandRequest;
 import io.simplehex.map.transport.MapCommandRequest;
 import io.simplehex.map.transport.MapSnapshotResponse;
 import io.simplehex.map.transport.TerrainCommandRequest;
@@ -50,7 +51,8 @@ public class MapService {
                                 storedCommand.commandType(),
                                 new CellRefDto(storedCommand.cellQ(), storedCommand.cellR()),
                                 storedCommand.terrain(),
-                                storedCommand.terrainHidden())))
+                                storedCommand.terrainHidden(),
+                                storedCommand.featureHidden())))
                 .orElseGet(() -> applyNewCommand(mapId, request));
     }
 
@@ -65,6 +67,9 @@ public class MapService {
         }
         if (request instanceof CellVisibilityCommandRequest visibilityCommandRequest) {
             return applyVisibilityCommand(mapId, visibilityCommandRequest);
+        }
+        if (request instanceof FeatureVisibilityCommandRequest featureVisibilityCommandRequest) {
+            return applyFeatureVisibilityCommand(mapId, featureVisibilityCommandRequest);
         }
 
         throw new MapCommandException(HttpStatus.BAD_REQUEST, "unsupported_command_type");
@@ -93,6 +98,7 @@ public class MapService {
                         request.type(),
                         request.cell(),
                         request.terrain(),
+                        null,
                         null));
         eventPublisher.publishEvent(new MapCommandAppliedEvent(mapId, response));
         return response;
@@ -121,7 +127,37 @@ public class MapService {
                         request.type(),
                         request.cell(),
                         null,
-                        request.terrainHidden()));
+                        request.terrainHidden(),
+                        null));
+        eventPublisher.publishEvent(new MapCommandAppliedEvent(mapId, response));
+        return response;
+    }
+
+    private CommandAppliedResponse applyFeatureVisibilityCommand(String mapId, FeatureVisibilityCommandRequest request) {
+        if (!"set_cell_feature_visibility".equals(request.type())) {
+            throw new MapCommandException(HttpStatus.BAD_REQUEST, "unsupported_command_type");
+        }
+
+        HexCoord coord = new HexCoord(request.cell().q(), request.cell().r());
+        if (!mapRepository.cellExists(mapId, coord)) {
+            throw new MapCommandException(HttpStatus.NOT_FOUND, "cell_not_found");
+        }
+
+        mapRepository.updateCellFeatureHidden(mapId, coord, request.featureHidden());
+        long nextRevision = mapRepository.incrementRevision(mapId);
+        mapRepository.insertFeatureVisibilityCommandLog(mapId, request, nextRevision);
+
+        CommandAppliedResponse response = new CommandAppliedResponse(
+                "command_applied",
+                request.operationId(),
+                mapId,
+                nextRevision,
+                new AppliedMapCommandDto(
+                        request.type(),
+                        request.cell(),
+                        null,
+                        null,
+                        request.featureHidden()));
         eventPublisher.publishEvent(new MapCommandAppliedEvent(mapId, response));
         return response;
     }

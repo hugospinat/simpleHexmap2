@@ -1,5 +1,5 @@
 import type { RenderModel } from "./renderModel";
-import type { MapSnapshotDto, TerrainType } from "./transport";
+import type { MapSnapshotDto, TerrainType } from "../transport/dto";
 
 const terrainPalette: Record<TerrainType, number> = {
   forest: 0x3b6b4d,
@@ -17,8 +17,12 @@ export function projectRenderModel(snapshot: MapSnapshotDto): RenderModel {
       r: cell.r,
       terrain: cell.terrain,
       fill: terrainPalette[cell.terrain],
-      label: `${cell.terrain}${cell.terrainHidden ? " · hidden" : ""} (${cell.q}, ${cell.r})`,
-      terrainHidden: cell.terrainHidden
+      label: `${cell.terrain} (${cell.q}, ${cell.r})`,
+      visibilityLabel: [cell.terrainHidden ? "terrain hidden" : null, cell.featureHidden ? "feature hidden" : null]
+        .filter(Boolean)
+        .join(" · "),
+      terrainHidden: cell.terrainHidden,
+      featureHidden: cell.featureHidden
     }))
   };
 }

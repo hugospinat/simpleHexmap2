@@ -140,6 +140,50 @@ class MapWebSocketIntegrationTest {
         webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "done").join();
     }
 
+    @Test
+    void gmWebsocketReceivesFeatureVisibilityCommand() throws Exception {
+        BlockingQueue<String> messages = new LinkedBlockingQueue<>();
+        WebSocket webSocket = HttpClient.newHttpClient()
+                .newWebSocketBuilder()
+                .connectTimeout(Duration.ofSeconds(5))
+                .buildAsync(
+                        URI.create("ws://localhost:" + port + "/api/maps/demo-map/ws?role=gm"),
+                        new QueueingWebSocketListener(messages))
+                .join();
+
+        String initialMessage = messages.poll(5, TimeUnit.SECONDS);
+        assertThat(initialMessage).isNotNull();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        String requestBody = """
+                {
+                  "type": "set_cell_feature_visibility",
+                  "operationId": "ws-feature-1",
+                  "actorRole": "gm",
+                  "cell": { "q": 1, "r": 0 },
+                  "featureHidden": true
+                }
+                """;
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                "http://localhost:" + port + "/api/maps/demo-map/commands",
+                new HttpEntity<>(requestBody, headers),
+                String.class);
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+
+        String appliedMessage = messages.poll(5, TimeUnit.SECONDS);
+        assertThat(appliedMessage).isNotNull();
+        Map<String, Object> appliedPayload = objectMapper.readValue(appliedMessage, new TypeReference<>() {
+        });
+        assertThat(appliedPayload.get("type")).isEqualTo("command_applied");
+        Map<?, ?> command = (Map<?, ?>) appliedPayload.get("command");
+        assertThat(command.get("type")).isEqualTo("set_cell_feature_visibility");
+        assertThat(command.get("featureHidden")).isEqualTo(true);
+
+        webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "done").join();
+    }
+
     private static final class QueueingWebSocketListener implements Listener {
         private final BlockingQueue<String> messages;
         private final StringBuilder currentMessage = new StringBuilder();

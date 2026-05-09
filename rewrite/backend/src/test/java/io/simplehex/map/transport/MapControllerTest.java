@@ -87,7 +87,7 @@ class MapControllerTest {
     }
 
         @Test
-        void appliesVisibilityCommandAndFiltersPlayerSnapshot() throws Exception {
+    void appliesVisibilityCommandAndFiltersPlayerSnapshot() throws Exception {
             String requestBody = """
                 {
                   "type": "set_cell_visibility",
@@ -110,5 +110,31 @@ class MapControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.revision").value(1))
                 .andExpect(jsonPath("$.cells.length()").value(2));
+    }
+
+    @Test
+    void appliesFeatureVisibilityCommandAndKeepsCellInSnapshot() throws Exception {
+        String requestBody = """
+                {
+                  "type": "set_cell_feature_visibility",
+                  "operationId": "op-feature-1",
+                  "actorRole": "gm",
+                  "cell": { "q": 1, "r": 0 },
+                  "featureHidden": true
+                }
+                """;
+
+        mockMvc.perform(post("/api/maps/demo-map/commands")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.operationId").value("op-feature-1"))
+                .andExpect(jsonPath("$.command.type").value("set_cell_feature_visibility"))
+                .andExpect(jsonPath("$.command.featureHidden").value(true));
+
+        mockMvc.perform(get("/api/maps/demo-map").queryParam("role", "gm"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.revision").value(1))
+                .andExpect(jsonPath("$.cells[1].featureHidden").value(true));
     }
 }

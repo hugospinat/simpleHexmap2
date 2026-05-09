@@ -6,6 +6,7 @@ import io.simplehex.map.domain.HexCoord;
 import io.simplehex.map.domain.TerrainType;
 import io.simplehex.map.transport.CellSnapshotDto;
 import io.simplehex.map.transport.CellVisibilityCommandRequest;
+import io.simplehex.map.transport.FeatureVisibilityCommandRequest;
 import io.simplehex.map.transport.TerrainCommandRequest;
 import java.util.List;
 import java.util.Optional;
@@ -79,7 +80,8 @@ public class JpaMapRepository {
             entity.getCellQ(),
             entity.getCellR(),
             entity.getTerrain() == null ? null : TerrainType.fromValue(entity.getTerrain()),
-            entity.getTerrainHiddenValue()));
+            entity.getTerrainHiddenValue(),
+            entity.getFeatureHiddenValue()));
     }
 
     public long incrementRevision(String mapId) {
@@ -110,6 +112,15 @@ public class JpaMapRepository {
         entity.setTerrainHidden(terrainHidden);
     }
 
+    public void updateCellFeatureHidden(String mapId, HexCoord coord, boolean featureHidden) {
+        MapCellEntity entity = entityManager.find(MapCellEntity.class, new MapCellId(mapId, coord.q(), coord.r()));
+        if (entity == null) {
+            throw new MapCommandException(org.springframework.http.HttpStatus.NOT_FOUND, "cell_not_found");
+        }
+
+        entity.setFeatureHidden(featureHidden);
+    }
+
     public void insertTerrainCommandLog(String mapId, TerrainCommandRequest request, long sequence) {
         entityManager.persist(new MapOperationLogEntity(
                 new MapOperationLogId(mapId, request.operationId()),
@@ -119,6 +130,7 @@ public class JpaMapRepository {
                 request.cell().q(),
                 request.cell().r(),
                 request.terrain().value(),
+                null,
                 null));
     }
 
@@ -131,7 +143,21 @@ public class JpaMapRepository {
                 request.cell().q(),
                 request.cell().r(),
                 null,
-                request.terrainHidden()));
+                request.terrainHidden(),
+                null));
+    }
+
+    public void insertFeatureVisibilityCommandLog(String mapId, FeatureVisibilityCommandRequest request, long sequence) {
+        entityManager.persist(new MapOperationLogEntity(
+                new MapOperationLogId(mapId, request.operationId()),
+                sequence,
+                request.type(),
+                request.actorRole().value(),
+                request.cell().q(),
+                request.cell().r(),
+                null,
+                null,
+                request.featureHidden()));
     }
 
     public void resetSeedData() {

@@ -54,4 +54,8 @@ public class MapCellEntity {
     public boolean isFeatureHidden() {
         return featureHidden;
     }
+
+    public void setFeatureHidden(boolean featureHidden) {
+        this.featureHidden = featureHidden;
+    }
 }

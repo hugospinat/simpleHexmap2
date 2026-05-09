@@ -1,4 +1,4 @@
-import type { MapSnapshotDto } from "./transport";
+import type { MapSnapshotDto } from "../transport/dto";
 
 export function applyOptimisticVisibility(
   snapshot: MapSnapshotDto | null,
@@ -22,6 +22,24 @@ export function applyOptimisticVisibility(
     ...snapshot,
     cells: snapshot.cells.map((cell) =>
       cell.q === q && cell.r === r ? { ...cell, terrainHidden } : cell
+    )
+  };
+}
+
+export function applyOptimisticFeatureVisibility(
+  snapshot: MapSnapshotDto | null,
+  q: number,
+  r: number,
+  featureHidden: boolean
+): MapSnapshotDto | null {
+  if (!snapshot) {
+    return snapshot;
+  }
+
+  return {
+    ...snapshot,
+    cells: snapshot.cells.map((cell) =>
+      cell.q === q && cell.r === r ? { ...cell, featureHidden } : cell
     )
   };
 }
