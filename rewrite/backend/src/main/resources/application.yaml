@@ -8,11 +8,8 @@ spring:
     driver-class-name: ${HEXMAP_DB_DRIVER:org.h2.Driver}
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     open-in-view: false
-  sql:
-    init:
-      mode: always
 
 management:
   endpoints:

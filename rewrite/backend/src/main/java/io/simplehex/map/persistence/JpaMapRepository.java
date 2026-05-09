@@ -12,6 +12,7 @@ import java.util.Optional;
 
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class JpaMapRepository {
@@ -138,6 +139,19 @@ public class JpaMapRepository {
         entityManager.createQuery("delete from MapCellEntity").executeUpdate();
         entityManager.createQuery("delete from MapEntity").executeUpdate();
 
+        persistDemoMapSeed();
+    }
+
+    @Transactional
+    public void seedDemoMapIfMissing() {
+        if (entityManager.find(MapEntity.class, "demo-map") != null) {
+            return;
+        }
+
+        persistDemoMapSeed();
+    }
+
+    private void persistDemoMapSeed() {
         entityManager.persist(new MapEntity("demo-map", 0));
         entityManager.persist(new MapCellEntity(new MapCellId("demo-map", 0, 0), "plains", false, false));
         entityManager.persist(new MapCellEntity(new MapCellId("demo-map", 1, 0), "forest", false, false));

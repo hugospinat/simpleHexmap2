@@ -4,9 +4,13 @@ import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "map_operation_log")
+@Table(
+    name = "map_operation_log",
+    uniqueConstraints = @UniqueConstraint(name = "uq_map_sequence", columnNames = { "map_id", "sequence" })
+)
 public class MapOperationLogEntity {
 
     @EmbeddedId
