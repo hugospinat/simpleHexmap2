@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import {
   applyFeatureVisibilityCommand,
   applyTerrainCommand,
+  applyTerritoryCommand,
   applyVisibilityCommand,
   connectMapRealtime,
   fetchMapSnapshot
 } from "../transport/mapApi";
+import { applyOptimisticTerritory } from "./applyOptimisticTerritory";
 import { applyOptimisticFeatureVisibility, applyOptimisticVisibility } from "./applyOptimisticVisibility";
 import { applyOptimisticTerrain } from "./applyOptimisticTerrain";
 import { applyRealtimeMessage } from "./applyRealtimeMessage";
@@ -24,6 +26,7 @@ type MapSliceState = {
   repaintCell: (q: number, r: number, terrain: TerrainType) => void;
   setTerrainVisibility: (q: number, r: number, terrainHidden: boolean) => void;
   setFeatureVisibility: (q: number, r: number, featureHidden: boolean) => void;
+  setTerritoryFaction: (q: number, r: number, territoryFactionId: string | null) => void;
   refresh: () => void;
 };
 
@@ -129,6 +132,23 @@ export function useMapSlice(): MapSliceState {
     );
   };
 
+  const setTerritoryFaction = (q: number, r: number, territoryFactionId: string | null) => {
+    const operationId = crypto.randomUUID();
+    setError(null);
+    setPendingOperationIds((current) => [...current, operationId]);
+    setSnapshot((currentSnapshot) =>
+      applyOptimisticTerritory(currentSnapshot, q, r, territoryFactionId)
+    );
+
+    void applyTerritoryCommand(operationId, { q, r }, territoryFactionId, role).catch(
+      (commandError: Error) => {
+        setPendingOperationIds((current) => current.filter((value) => value !== operationId));
+        setError(commandError.message);
+        loadSnapshot();
+      }
+    );
+  };
+
   return {
     snapshot,
     error,
@@ -140,6 +160,7 @@ export function useMapSlice(): MapSliceState {
     repaintCell,
     setTerrainVisibility,
     setFeatureVisibility,
+    setTerritoryFaction,
     refresh: loadSnapshot
   };
 }

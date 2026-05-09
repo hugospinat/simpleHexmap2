@@ -6,12 +6,15 @@ import io.simplehex.map.persistence.JpaMapRepository;
 import io.simplehex.map.persistence.MapPersistenceRecord;
 import io.simplehex.map.transport.AppliedMapCommandDto;
 import io.simplehex.map.transport.CellRefDto;
+import io.simplehex.map.transport.CellTerritoryCommandRequest;
 import io.simplehex.map.transport.CellVisibilityCommandRequest;
 import io.simplehex.map.transport.CommandAppliedResponse;
+import io.simplehex.map.transport.FactionDto;
 import io.simplehex.map.transport.FeatureVisibilityCommandRequest;
 import io.simplehex.map.transport.MapCommandRequest;
 import io.simplehex.map.transport.MapSnapshotResponse;
 import io.simplehex.map.transport.TerrainCommandRequest;
+import java.util.List;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,6 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class MapService {
+
+    private static final List<FactionDto> DEMO_FACTIONS = List.of(
+            new FactionDto("amber", "Amber Wardens", "#d08a2f"),
+            new FactionDto("violet", "Violet League", "#7b61ff"));
 
     private final ApplicationEventPublisher eventPublisher;
     private final JpaMapRepository mapRepository;
@@ -30,7 +37,7 @@ public class MapService {
 
     public MapSnapshotResponse getSnapshot(String mapId, ActorRole role) {
         MapPersistenceRecord map = requireMap(mapId);
-        return new MapSnapshotResponse(map.mapId(), map.revision(), role, mapRepository.findCells(mapId, role));
+        return new MapSnapshotResponse(map.mapId(), map.revision(), role, DEMO_FACTIONS, mapRepository.findCells(mapId, role));
     }
 
     @Transactional
@@ -52,7 +59,8 @@ public class MapService {
                                 new CellRefDto(storedCommand.cellQ(), storedCommand.cellR()),
                                 storedCommand.terrain(),
                                 storedCommand.terrainHidden(),
-                                storedCommand.featureHidden())))
+                                storedCommand.featureHidden(),
+                                storedCommand.territoryFactionId())))
                 .orElseGet(() -> applyNewCommand(mapId, request));
     }
 
@@ -70,6 +78,9 @@ public class MapService {
         }
         if (request instanceof FeatureVisibilityCommandRequest featureVisibilityCommandRequest) {
             return applyFeatureVisibilityCommand(mapId, featureVisibilityCommandRequest);
+        }
+        if (request instanceof CellTerritoryCommandRequest territoryCommandRequest) {
+            return applyTerritoryCommand(mapId, territoryCommandRequest);
         }
 
         throw new MapCommandException(HttpStatus.BAD_REQUEST, "unsupported_command_type");
@@ -98,6 +109,7 @@ public class MapService {
                         request.type(),
                         request.cell(),
                         request.terrain(),
+                        null,
                         null,
                         null));
         eventPublisher.publishEvent(new MapCommandAppliedEvent(mapId, response));
@@ -128,6 +140,7 @@ public class MapService {
                         request.cell(),
                         null,
                         request.terrainHidden(),
+                        null,
                         null));
         eventPublisher.publishEvent(new MapCommandAppliedEvent(mapId, response));
         return response;
@@ -157,7 +170,42 @@ public class MapService {
                         request.cell(),
                         null,
                         null,
-                        request.featureHidden()));
+                        request.featureHidden(),
+                        null));
+        eventPublisher.publishEvent(new MapCommandAppliedEvent(mapId, response));
+        return response;
+    }
+
+    private CommandAppliedResponse applyTerritoryCommand(String mapId, CellTerritoryCommandRequest request) {
+        if (!"set_cell_territory".equals(request.type())) {
+            throw new MapCommandException(HttpStatus.BAD_REQUEST, "unsupported_command_type");
+        }
+
+        if (request.territoryFactionId() != null && DEMO_FACTIONS.stream().noneMatch(faction -> faction.id().equals(request.territoryFactionId()))) {
+            throw new MapCommandException(HttpStatus.BAD_REQUEST, "unknown_faction_id");
+        }
+
+        HexCoord coord = new HexCoord(request.cell().q(), request.cell().r());
+        if (!mapRepository.cellExists(mapId, coord)) {
+            throw new MapCommandException(HttpStatus.NOT_FOUND, "cell_not_found");
+        }
+
+        mapRepository.updateCellTerritoryFaction(mapId, coord, request.territoryFactionId());
+        long nextRevision = mapRepository.incrementRevision(mapId);
+        mapRepository.insertTerritoryCommandLog(mapId, request, nextRevision);
+
+        CommandAppliedResponse response = new CommandAppliedResponse(
+                "command_applied",
+                request.operationId(),
+                mapId,
+                nextRevision,
+                new AppliedMapCommandDto(
+                        request.type(),
+                        request.cell(),
+                        null,
+                        null,
+                        null,
+                        request.territoryFactionId()));
         eventPublisher.publishEvent(new MapCommandAppliedEvent(mapId, response));
         return response;
     }

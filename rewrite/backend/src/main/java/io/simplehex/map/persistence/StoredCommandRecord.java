@@ -10,6 +10,7 @@ public record StoredCommandRecord(
         int cellR,
         TerrainType terrain,
         Boolean terrainHidden,
-        Boolean featureHidden
+        Boolean featureHidden,
+        String territoryFactionId
 ) {
 }

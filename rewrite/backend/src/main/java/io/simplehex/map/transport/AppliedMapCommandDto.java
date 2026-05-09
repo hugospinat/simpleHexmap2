@@ -7,6 +7,7 @@ public record AppliedMapCommandDto(
         CellRefDto cell,
         TerrainType terrain,
         Boolean terrainHidden,
-        Boolean featureHidden
+        Boolean featureHidden,
+        String territoryFactionId
 ) {
 }

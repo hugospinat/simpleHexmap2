@@ -8,12 +8,20 @@ export type CellDto = {
   terrain: TerrainType;
   terrainHidden: boolean;
   featureHidden: boolean;
+  territoryFactionId: string | null;
+};
+
+export type FactionDto = {
+  id: string;
+  label: string;
+  color: string;
 };
 
 export type MapSnapshotDto = {
   mapId: string;
   revision: number;
   role: "gm" | "player";
+  factions: FactionDto[];
   cells: CellDto[];
 };
 
@@ -46,6 +54,14 @@ export type FeatureVisibilityCommandRequestDto = {
   featureHidden: boolean;
 };
 
+export type TerritoryCommandRequestDto = {
+  type: "set_cell_territory";
+  operationId: string;
+  actorRole: ActorRole;
+  cell: CellRefDto;
+  territoryFactionId: string | null;
+};
+
 export type AppliedCommandDto =
   | {
       type: "set_cell_terrain";
@@ -53,6 +69,7 @@ export type AppliedCommandDto =
       terrain: TerrainType;
       terrainHidden: null;
       featureHidden: null;
+      territoryFactionId: null;
     }
   | {
       type: "set_cell_visibility";
@@ -60,6 +77,7 @@ export type AppliedCommandDto =
       terrain: null;
       terrainHidden: boolean;
       featureHidden: null;
+      territoryFactionId: null;
     }
   | {
       type: "set_cell_feature_visibility";
@@ -67,6 +85,15 @@ export type AppliedCommandDto =
       terrain: null;
       terrainHidden: null;
       featureHidden: boolean;
+      territoryFactionId: null;
+    }
+  | {
+      type: "set_cell_territory";
+      cell: CellRefDto;
+      terrain: null;
+      terrainHidden: null;
+      featureHidden: null;
+      territoryFactionId: string | null;
     };
 
 export type CommandAppliedResponseDto = {

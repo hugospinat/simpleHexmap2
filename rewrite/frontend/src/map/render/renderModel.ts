@@ -6,9 +6,10 @@ export type TerrainTileRender = {
   terrain: TerrainType;
   fill: number;
   label: string;
-  visibilityLabel: string;
+  detailLabel: string;
   terrainHidden: boolean;
   featureHidden: boolean;
+  territoryStroke: number | null;
 };
 
 export type RenderModel = {

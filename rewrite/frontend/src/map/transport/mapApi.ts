@@ -6,7 +6,8 @@ import type {
   MapSnapshotDto,
   RealtimeMessageDto,
   TerrainCommandRequestDto,
-  TerrainType
+  TerrainType,
+  TerritoryCommandRequestDto
 } from "./dto";
 
 const API_ROOT = "/api/maps";
@@ -93,6 +94,31 @@ export async function applyFeatureVisibilityCommand(
     actorRole,
     cell,
     featureHidden
+  };
+
+  const response = await fetch(`${API_ROOT}/${MAP_ID}/commands`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(command)
+  });
+
+  return parseJsonResponse<CommandAppliedResponseDto>(response);
+}
+
+export async function applyTerritoryCommand(
+  operationId: string,
+  cell: { q: number; r: number },
+  territoryFactionId: string | null,
+  actorRole: ActorRole = "gm"
+): Promise<CommandAppliedResponseDto> {
+  const command: TerritoryCommandRequestDto = {
+    type: "set_cell_territory",
+    operationId,
+    actorRole,
+    cell,
+    territoryFactionId
   };
 
   const response = await fetch(`${API_ROOT}/${MAP_ID}/commands`, {

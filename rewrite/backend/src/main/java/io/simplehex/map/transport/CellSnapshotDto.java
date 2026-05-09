@@ -7,6 +7,7 @@ public record CellSnapshotDto(
         int r,
         TerrainType terrain,
         boolean terrainHidden,
-        boolean featureHidden
+        boolean featureHidden,
+        String territoryFactionId
 ) {
 }

@@ -14,13 +14,17 @@
   "mapId": "uuid",
   "revision": 12,
   "role": "gm",
+  "factions": [
+    { "id": "amber", "label": "Amber Wardens", "color": "#d08a2f" }
+  ],
   "cells": [
     {
       "q": 0,
       "r": 0,
       "terrain": "plains",
       "terrainHidden": false,
-      "featureHidden": false
+      "featureHidden": false,
+      "territoryFactionId": "amber"
     }
   ]
 }
@@ -58,6 +62,16 @@
 }
 ```
 
+```json
+{
+  "type": "set_cell_territory",
+  "operationId": "uuid",
+  "actorRole": "gm",
+  "cell": { "q": 0, "r": 0 },
+  "territoryFactionId": "amber"
+}
+```
+
 ## First slice server events
 
 WebSocket endpoint:
@@ -77,6 +91,7 @@ Sent on connect or when the client must resync from authority.
     "mapId": "uuid",
     "revision": 12,
     "role": "gm",
+    "factions": [],
     "cells": []
   }
 }
@@ -98,7 +113,7 @@ Sent on connect or when the client must resync from authority.
 }
 ```
 
-The same `command_applied` envelope is also used for `set_cell_visibility` with `terrainHidden` instead of `terrain`, and for `set_cell_feature_visibility` with `featureHidden`.
+The same `command_applied` envelope is also used for `set_cell_visibility` with `terrainHidden` instead of `terrain`, for `set_cell_feature_visibility` with `featureHidden`, and for `set_cell_territory` with `territoryFactionId`.
 
 ### `command_rejected`
 

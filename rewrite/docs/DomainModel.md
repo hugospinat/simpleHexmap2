@@ -85,6 +85,32 @@ Failure cases:
 - target cell does not exist
 - terrain value is invalid
 
+### `SetCellTerritory`
+
+Input:
+
+- `mapId`
+- `q`
+- `r`
+- `territoryFactionId?`
+- `operationId`
+- `actorRole`
+
+Behavior:
+
+- updates only the territory ownership field for the target cell
+- accepts `null` to clear territory ownership
+- validates faction ids against the server-advertised faction catalog
+- increments the authoritative revision through server sequencing
+- emits an authoritative territory delta
+
+Failure cases:
+
+- map does not exist
+- actor is not allowed to edit the map
+- target cell does not exist
+- faction id is unknown
+
 ## Conflict model
 
 V1 uses server sequencing with last-write-wins.

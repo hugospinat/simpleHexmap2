@@ -33,14 +33,28 @@ function applyCommand(snapshot: MapSnapshotDto, message: CommandAppliedResponseD
     };
   }
 
-  const { cell: targetCell, featureHidden } = message.command;
+  if (message.command.type === "set_cell_feature_visibility" && message.command.featureHidden !== null) {
+    const { cell: targetCell, featureHidden } = message.command;
+
+    return {
+      ...snapshot,
+      revision: message.sequence,
+      cells: snapshot.cells.map((cell) =>
+        cell.q === targetCell.q && cell.r === targetCell.r
+          ? { ...cell, featureHidden }
+          : cell
+      )
+    };
+  }
+
+  const { cell: targetCell, territoryFactionId } = message.command;
 
   return {
     ...snapshot,
     revision: message.sequence,
     cells: snapshot.cells.map((cell) =>
       cell.q === targetCell.q && cell.r === targetCell.r
-        ? { ...cell, featureHidden }
+        ? { ...cell, territoryFactionId }
         : cell
     )
   };

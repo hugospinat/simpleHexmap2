@@ -8,7 +8,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonSubTypes({
         @JsonSubTypes.Type(value = TerrainCommandRequest.class, name = "set_cell_terrain"),
         @JsonSubTypes.Type(value = CellVisibilityCommandRequest.class, name = "set_cell_visibility"),
-        @JsonSubTypes.Type(value = FeatureVisibilityCommandRequest.class, name = "set_cell_feature_visibility")
+        @JsonSubTypes.Type(value = FeatureVisibilityCommandRequest.class, name = "set_cell_feature_visibility"),
+        @JsonSubTypes.Type(value = CellTerritoryCommandRequest.class, name = "set_cell_territory")
 })
 public interface MapCommandRequest {
     String type();

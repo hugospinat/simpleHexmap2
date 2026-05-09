@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useMapSlice } from "../application/useMapSlice";
 import { projectRenderModel } from "../render/projectRenderModel";
 import { mountPreviewScene } from "../render/pixiPreview";
+import type { CellDto, MapSnapshotDto } from "../transport/dto";
 
 const decisions = [
   "Server authority with last-write-wins sequencing",
@@ -9,6 +10,16 @@ const decisions = [
   "No import/export in the first wave",
   "GM can move all tokens; players can move only their own on visible cells"
 ];
+
+function nextTerritoryFactionId(snapshot: MapSnapshotDto | null, cell: CellDto | null): string | null {
+  if (!snapshot || !cell) {
+    return null;
+  }
+
+  const factionIds = [null, ...snapshot.factions.map((faction) => faction.id)];
+  const currentIndex = factionIds.findIndex((factionId) => factionId === cell.territoryFactionId);
+  return factionIds[(currentIndex + 1) % factionIds.length];
+}
 
 function App() {
   const canvasHostRef = useRef<HTMLDivElement | null>(null);
@@ -23,6 +34,7 @@ function App() {
     repaintCell,
     setTerrainVisibility,
     setFeatureVisibility,
+    setTerritoryFaction,
     refresh
   } = useMapSlice();
   const renderModel = useMemo(
@@ -113,6 +125,17 @@ function App() {
           >
             {isMutating ? "Applying feature mask..." : "Toggle first cell feature"}
           </button>
+          <button
+            className="action-button action-button-secondary"
+            onClick={() => {
+              if (firstCell) {
+                setTerritoryFaction(firstCell.q, firstCell.r, nextTerritoryFactionId(snapshot, firstCell));
+              }
+            }}
+            disabled={role !== "gm" || !firstCell || !snapshot || isLoading || isMutating}
+          >
+            {isMutating ? "Applying territory..." : "Cycle first cell territory"}
+          </button>
           <p className="status-line">
             {snapshot
               ? `Loaded ${snapshot.cells.length} cells from ${snapshot.mapId} at revision ${snapshot.revision} as ${role}.`
@@ -125,7 +148,7 @@ function App() {
       <section className="canvas-panel">
         <header>
           <p className="eyebrow">Pixi surface</p>
-          <h2>Terrain and feature visibility preview</h2>
+          <h2>Terrain, visibility, and territory preview</h2>
         </header>
         {!renderModel ? <p className="canvas-empty">Waiting for the backend snapshot.</p> : null}
         <div className="canvas-host" ref={canvasHostRef} />

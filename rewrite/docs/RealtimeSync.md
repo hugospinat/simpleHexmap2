@@ -24,7 +24,7 @@ frontend boot
 -> HTTP snapshot fetch for fast initial paint
 -> WebSocket connect to /api/maps/{mapId}/ws?role=gm|player
 -> server sends sync_snapshot
--> client submits set_cell_terrain, set_cell_visibility, or set_cell_feature_visibility over HTTP
+-> client submits set_cell_terrain, set_cell_visibility, set_cell_feature_visibility, or set_cell_territory over HTTP
 -> server validates and sequences
 -> server persists operation + current cell projection
 -> server emits command_applied to GM sessions
@@ -38,9 +38,9 @@ frontend boot
 - `POST /api/maps/{mapId}/commands`
 - `WS /api/maps/{mapId}/ws?role=gm|player`
 
-The current frontend still keeps an explicit HTTP refresh action as a fallback, but the normal terrain and visibility mutation flow no longer reloads the snapshot after each command.
+The current frontend still keeps an explicit HTTP refresh action as a fallback, but the normal terrain, visibility, feature visibility, and territory mutation flow no longer reloads the snapshot after each command.
 
-The current frontend also exposes a local GM/player role switch so the visibility filter and feature visibility preview can be observed directly against the same backend slice.
+The current frontend also exposes a local GM/player role switch so the visibility filter, feature visibility preview, and territory preview can be observed directly against the same backend slice.
 
 ## Reconnect policy
 

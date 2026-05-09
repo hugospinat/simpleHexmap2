@@ -184,6 +184,50 @@ class MapWebSocketIntegrationTest {
         webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "done").join();
     }
 
+    @Test
+    void gmWebsocketReceivesTerritoryCommand() throws Exception {
+        BlockingQueue<String> messages = new LinkedBlockingQueue<>();
+        WebSocket webSocket = HttpClient.newHttpClient()
+                .newWebSocketBuilder()
+                .connectTimeout(Duration.ofSeconds(5))
+                .buildAsync(
+                        URI.create("ws://localhost:" + port + "/api/maps/demo-map/ws?role=gm"),
+                        new QueueingWebSocketListener(messages))
+                .join();
+
+        String initialMessage = messages.poll(5, TimeUnit.SECONDS);
+        assertThat(initialMessage).isNotNull();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        String requestBody = """
+                {
+                  "type": "set_cell_territory",
+                  "operationId": "ws-territory-1",
+                  "actorRole": "gm",
+                  "cell": { "q": 0, "r": 0 },
+                  "territoryFactionId": "amber"
+                }
+                """;
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                "http://localhost:" + port + "/api/maps/demo-map/commands",
+                new HttpEntity<>(requestBody, headers),
+                String.class);
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+
+        String appliedMessage = messages.poll(5, TimeUnit.SECONDS);
+        assertThat(appliedMessage).isNotNull();
+        Map<String, Object> appliedPayload = objectMapper.readValue(appliedMessage, new TypeReference<>() {
+        });
+        assertThat(appliedPayload.get("type")).isEqualTo("command_applied");
+        Map<?, ?> command = (Map<?, ?>) appliedPayload.get("command");
+        assertThat(command.get("type")).isEqualTo("set_cell_territory");
+        assertThat(command.get("territoryFactionId")).isEqualTo("amber");
+
+        webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "done").join();
+    }
+
     private static final class QueueingWebSocketListener implements Listener {
         private final BlockingQueue<String> messages;
         private final StringBuilder currentMessage = new StringBuilder();

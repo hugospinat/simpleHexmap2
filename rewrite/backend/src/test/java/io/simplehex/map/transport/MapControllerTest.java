@@ -35,8 +35,10 @@ class MapControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.mapId").value("demo-map"))
                 .andExpect(jsonPath("$.revision").value(0))
+                .andExpect(jsonPath("$.factions.length()").value(2))
                 .andExpect(jsonPath("$.cells.length()").value(3))
-                .andExpect(jsonPath("$.cells[0].terrain").value("plains"));
+                .andExpect(jsonPath("$.cells[0].terrain").value("plains"))
+                .andExpect(jsonPath("$.cells[1].territoryFactionId").value("amber"));
     }
 
     @Test
@@ -136,5 +138,31 @@ class MapControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.revision").value(1))
                 .andExpect(jsonPath("$.cells[1].featureHidden").value(true));
+    }
+
+    @Test
+    void appliesTerritoryCommandAndPersistsFactionOwnership() throws Exception {
+        String requestBody = """
+                {
+                  "type": "set_cell_territory",
+                  "operationId": "op-territory-1",
+                  "actorRole": "gm",
+                  "cell": { "q": 0, "r": 0 },
+                  "territoryFactionId": "violet"
+                }
+                """;
+
+        mockMvc.perform(post("/api/maps/demo-map/commands")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.operationId").value("op-territory-1"))
+                .andExpect(jsonPath("$.command.type").value("set_cell_territory"))
+                .andExpect(jsonPath("$.command.territoryFactionId").value("violet"));
+
+        mockMvc.perform(get("/api/maps/demo-map").queryParam("role", "gm"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.revision").value(1))
+                .andExpect(jsonPath("$.cells[0].territoryFactionId").value("violet"));
     }
 }
