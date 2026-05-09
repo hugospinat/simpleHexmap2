@@ -7,6 +7,7 @@ Current status:
 - docs-first architecture pack started
 - frontend terrain, visibility, feature visibility, and territory slices are wired to the backend over HTTP and WebSocket, with demo session-backed actor switching
 - backend terrain, visibility, feature visibility, and territory slices are persisted through Spring Data JPA and validated with Spring integration tests under Java 21 and Gradle 9.1
+- backend persistence coverage includes duplicate operation replay, ordered operation-log assertions, and demo-map startup seeding checks
 
 ## Layout
 
