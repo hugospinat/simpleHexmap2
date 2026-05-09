@@ -1,0 +1,177 @@
+:root {
+  color: #f7f1df;
+  background:
+    radial-gradient(circle at top, rgba(198, 152, 88, 0.18), transparent 40%),
+    linear-gradient(180deg, #171e29 0%, #0b1118 100%);
+  font-family: "Georgia", "Times New Roman", serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: minmax(280px, 420px) 1fr;
+  gap: 24px;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.hero-panel,
+.canvas-panel {
+  border: 1px solid rgba(248, 231, 185, 0.16);
+  border-radius: 24px;
+  background: rgba(10, 16, 24, 0.72);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(12px);
+}
+
+.hero-panel {
+  padding: 28px;
+}
+
+.canvas-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: #d7b56d;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-weight: 600;
+}
+
+h1 {
+  font-size: clamp(2.4rem, 4vw, 4.2rem);
+  line-height: 0.95;
+}
+
+h2 {
+  font-size: 1.6rem;
+}
+
+.lede {
+  margin: 20px 0 0;
+  color: #cfd9e4;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.decision-list {
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.decision-list li {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(215, 181, 109, 0.08);
+  border: 1px solid rgba(215, 181, 109, 0.18);
+  color: #f0ebdd;
+}
+
+.control-panel {
+  margin-top: 24px;
+  display: grid;
+  gap: 12px;
+}
+
+.role-toggle {
+  display: flex;
+  gap: 10px;
+}
+
+.action-button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, #d7b56d, #8d6b2f);
+  color: #10161f;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.action-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.action-button-secondary {
+  background: linear-gradient(135deg, #6da1d7, #355d89);
+  color: #eef6ff;
+}
+
+.action-button-muted {
+  background: linear-gradient(135deg, #314151, #1a2530);
+  color: #d8e2ec;
+}
+
+.action-button-selected {
+  box-shadow: 0 0 0 2px rgba(247, 241, 223, 0.35) inset;
+}
+
+.status-line,
+.error-line,
+.canvas-empty {
+  margin: 0;
+  color: #cfd9e4;
+  line-height: 1.5;
+}
+
+.error-line {
+  color: #ffb6a5;
+}
+
+.canvas-empty {
+  margin-top: 18px;
+}
+
+.canvas-host {
+  flex: 1;
+  min-height: 420px;
+  margin-top: 18px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.canvas-host canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .canvas-host {
+    min-height: 320px;
+  }
+}

@@ -1,0 +1,125 @@
+import { useEffect, useMemo, useRef } from "react";
+import { useTerrainSlice } from "./hooks/useTerrainSlice";
+import { projectRenderModel } from "./model/projectRenderModel";
+import { mountPreviewScene } from "./pixiPreview";
+
+const decisions = [
+  "Server authority with last-write-wins sequencing",
+  "Exclusive faction territory per cell",
+  "No import/export in the first wave",
+  "GM can move all tokens; players can move only their own on visible cells"
+];
+
+function App() {
+  const canvasHostRef = useRef<HTMLDivElement | null>(null);
+  const {
+    snapshot,
+    error,
+    isLoading,
+    isMutating,
+    realtimeStatus,
+    role,
+    setRole,
+    repaintCell,
+    setTerrainVisibility,
+    refresh
+  } = useTerrainSlice();
+  const renderModel = useMemo(
+    () => (snapshot ? projectRenderModel(snapshot) : null),
+    [snapshot]
+  );
+
+  useEffect(() => {
+    const host = canvasHostRef.current;
+    if (!host || !renderModel) {
+      return;
+    }
+
+    const cleanupPromise = mountPreviewScene(host, renderModel);
+
+    return () => {
+      void cleanupPromise.then((cleanup) => cleanup());
+    };
+  }, [renderModel]);
+
+  const firstCell = snapshot?.cells[0] ?? null;
+
+  return (
+    <main className="app-shell">
+      <section className="hero-panel">
+        <p className="eyebrow">Authoritative editor slice</p>
+        <h1>simpleHexmap</h1>
+        <p className="lede">
+          Current implementation slice: terrain command pipeline, authoritative sequencing,
+          a transport snapshot, and a dedicated React plus Pixi render surface.
+        </p>
+        <ul className="decision-list">
+          {decisions.map((decision) => (
+            <li key={decision}>{decision}</li>
+          ))}
+        </ul>
+        <div className="control-panel">
+          <p className="eyebrow">HTTP slice</p>
+          <div className="role-toggle" role="group" aria-label="Viewer role">
+            <button
+              className={`action-button ${role === "gm" ? "action-button-selected" : "action-button-muted"}`}
+              onClick={() => setRole("gm")}
+              disabled={isLoading || isMutating}
+            >
+              GM view
+            </button>
+            <button
+              className={`action-button ${role === "player" ? "action-button-selected" : "action-button-muted"}`}
+              onClick={() => setRole("player")}
+              disabled={isLoading || isMutating}
+            >
+              Player view
+            </button>
+          </div>
+          <button className="action-button" onClick={refresh} disabled={isLoading || isMutating}>
+            {isLoading ? "Loading snapshot..." : "Reload snapshot"}
+          </button>
+          <button
+            className="action-button action-button-secondary"
+            onClick={() => {
+              if (firstCell) {
+                repaintCell(firstCell.q, firstCell.r, firstCell.terrain === "water" ? "forest" : "water");
+              }
+            }}
+            disabled={!firstCell || isLoading || isMutating}
+          >
+            {isMutating ? "Applying terrain..." : "Toggle first cell terrain"}
+          </button>
+          <button
+            className="action-button action-button-secondary"
+            onClick={() => {
+              if (firstCell) {
+                setTerrainVisibility(firstCell.q, firstCell.r, !firstCell.terrainHidden);
+              }
+            }}
+            disabled={role !== "gm" || !firstCell || isLoading || isMutating}
+          >
+            {isMutating ? "Applying fog..." : "Toggle first cell fog"}
+          </button>
+          <p className="status-line">
+            {snapshot
+              ? `Loaded ${snapshot.cells.length} cells from ${snapshot.mapId} at revision ${snapshot.revision} as ${role}.`
+              : "No snapshot loaded yet."}
+          </p>
+          <p className="status-line">Realtime: {realtimeStatus}</p>
+          {error ? <p className="error-line">Backend error: {error}</p> : null}
+        </div>
+      </section>
+      <section className="canvas-panel">
+        <header>
+          <p className="eyebrow">Pixi surface</p>
+          <h2>Terrain layer preview</h2>
+        </header>
+        {!renderModel ? <p className="canvas-empty">Waiting for the backend snapshot.</p> : null}
+        <div className="canvas-host" ref={canvasHostRef} />
+      </section>
+    </main>
+  );
+}
+
+export default App;
