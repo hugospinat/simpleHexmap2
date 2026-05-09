@@ -1,0 +1,3 @@
+[submodule "simpleHexmap"]
+	path = simpleHexmap
+	url = https://github.com/hugospinat/simpleHexmap.git
