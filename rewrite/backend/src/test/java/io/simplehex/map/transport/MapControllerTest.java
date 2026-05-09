@@ -90,6 +90,63 @@ class MapControllerTest {
     }
 
     @Test
+    void rejectsVisibilityEditsFromPlayers() throws Exception {
+        String requestBody = """
+                {
+                  "type": "set_cell_visibility",
+                  "operationId": "op-visibility-player",
+                  "cell": { "q": 0, "r": 0 },
+                  "terrainHidden": true
+                }
+                """;
+
+        mockMvc.perform(post("/api/maps/demo-map/commands")
+                        .cookie(loginAs("demo-player"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("terrain_edit_forbidden"));
+    }
+
+    @Test
+    void rejectsFeatureVisibilityEditsFromPlayers() throws Exception {
+        String requestBody = """
+                {
+                  "type": "set_cell_feature_visibility",
+                  "operationId": "op-feature-player",
+                  "cell": { "q": 1, "r": 0 },
+                  "featureHidden": true
+                }
+                """;
+
+        mockMvc.perform(post("/api/maps/demo-map/commands")
+                        .cookie(loginAs("demo-player"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("terrain_edit_forbidden"));
+    }
+
+    @Test
+    void rejectsTerritoryEditsFromPlayers() throws Exception {
+        String requestBody = """
+                {
+                  "type": "set_cell_territory",
+                  "operationId": "op-territory-player",
+                  "cell": { "q": 0, "r": 0 },
+                  "territoryFactionId": "amber"
+                }
+                """;
+
+        mockMvc.perform(post("/api/maps/demo-map/commands")
+                        .cookie(loginAs("demo-player"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("terrain_edit_forbidden"));
+    }
+
+    @Test
     void appliesVisibilityCommandAndFiltersPlayerSnapshot() throws Exception {
         String requestBody = """
                 {
@@ -116,6 +173,45 @@ class MapControllerTest {
     }
 
     @Test
+    void appliesVisibilityToggleAndRestoresPlayerSnapshotCell() throws Exception {
+        mockMvc.perform(post("/api/maps/demo-map/commands")
+                        .cookie(loginAs("demo-gm"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "type": "set_cell_visibility",
+                                  "operationId": "op-visibility-hide",
+                                  "cell": { "q": 0, "r": 0 },
+                                  "terrainHidden": true
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sequence").value(1));
+
+        mockMvc.perform(post("/api/maps/demo-map/commands")
+                        .cookie(loginAs("demo-gm"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "type": "set_cell_visibility",
+                                  "operationId": "op-visibility-show",
+                                  "cell": { "q": 0, "r": 0 },
+                                  "terrainHidden": false
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sequence").value(2));
+
+        mockMvc.perform(get("/api/maps/demo-map").cookie(loginAs("demo-player")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.revision").value(2))
+                .andExpect(jsonPath("$.cells.length()").value(3))
+                .andExpect(jsonPath("$.cells[0].q").value(0))
+                .andExpect(jsonPath("$.cells[0].r").value(0))
+                .andExpect(jsonPath("$.cells[0].terrainHidden").value(false));
+    }
+
+    @Test
     void appliesFeatureVisibilityCommandAndKeepsCellInSnapshot() throws Exception {
         String requestBody = """
                 {
@@ -138,6 +234,34 @@ class MapControllerTest {
         mockMvc.perform(get("/api/maps/demo-map").cookie(loginAs("demo-gm")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.revision").value(1))
+                .andExpect(jsonPath("$.cells[1].featureHidden").value(true));
+    }
+
+    @Test
+    void appliesFeatureVisibilityCommandAndKeepsCellVisibleForPlayers() throws Exception {
+        String requestBody = """
+                {
+                  "type": "set_cell_feature_visibility",
+                  "operationId": "op-feature-player-snapshot",
+                  "cell": { "q": 1, "r": 0 },
+                  "featureHidden": true
+                }
+                """;
+
+        mockMvc.perform(post("/api/maps/demo-map/commands")
+                        .cookie(loginAs("demo-gm"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.operationId").value("op-feature-player-snapshot"))
+                .andExpect(jsonPath("$.command.featureHidden").value(true));
+
+        mockMvc.perform(get("/api/maps/demo-map").cookie(loginAs("demo-player")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.revision").value(1))
+                .andExpect(jsonPath("$.cells.length()").value(3))
+                .andExpect(jsonPath("$.cells[1].q").value(1))
+                .andExpect(jsonPath("$.cells[1].r").value(0))
                 .andExpect(jsonPath("$.cells[1].featureHidden").value(true));
     }
 
