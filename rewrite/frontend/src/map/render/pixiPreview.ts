@@ -47,7 +47,7 @@ function projectAxialToScreen(q: number, r: number) {
 
   return {
     x: originX + q * horizontalStep,
-    y: originY + r * verticalStep + q * 0
+    y: originY + r * verticalStep
   };
 }
 
