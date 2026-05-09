@@ -7,6 +7,7 @@ public record MapSnapshotResponse(
         String mapId,
         long revision,
         ActorRole role,
-        List<CellSnapshotDto> cells
+        List<FactionResponse> factions,
+        List<CellSnapshotResponse> cells
 ) {
 }

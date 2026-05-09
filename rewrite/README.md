@@ -5,8 +5,10 @@ This directory contains the clean-room implementation workspace for simpleHexmap
 Current status:
 
 - docs-first architecture pack started
-- frontend terrain and visibility slices are wired to the backend over HTTP and WebSocket, with GM/player role switching
-- backend terrain and visibility slices are persisted through Spring Data JPA and validated with Spring integration tests under Java 25 and Gradle 9.1
+- frontend terrain, visibility, feature visibility, and territory slices are wired to the backend over HTTP and WebSocket, with demo session-backed actor switching
+- backend terrain, visibility, feature visibility, and territory slices are persisted through Flyway-managed SQL schema migrations plus Spring Data JPA validation under Java 21 and Gradle 9.1
+- backend persistence coverage includes duplicate operation replay, ordered operation-log assertions, and demo-map startup seeding checks
+- backend validation coverage includes player authorization checks across command types plus player-facing terrain/feature visibility edge cases
 
 ## Layout
 
@@ -14,17 +16,23 @@ Current status:
 - `frontend/` React + Pixi application shell
 - `backend/` Spring Boot application skeleton
 
-## First implementation slice
+## Current implementation slice
 
-The current implemented slice proves the full path for terrain editing and terrain visibility:
+The current implemented slice proves the full path for terrain editing, visibility, feature visibility, and territory ownership:
 
 - load a map snapshot
-- submit a terrain or visibility command
+- resolve or switch an authenticated demo session
+- submit a terrain, visibility, feature-visibility, or territory command
 - assign a server sequence
 - persist the result through JPA into SQL tables
 - broadcast an authoritative update
 - reconcile on the frontend with `operationId`
-- redraw the terrain layer
+- redraw the preview with distinct hidden-terrain, hidden-feature, and faction-territory states
+
+The current demo session slice uses server-issued cookies and two seeded identities:
+
+- `demo-gm` → GM editor for `demo-map`
+- `demo-player` → player viewer for `demo-map`
 
 ## Validation
 
@@ -33,6 +41,7 @@ Frontend:
 ```bash
 cd frontend
 npm install
+npm test
 npm run build
 npm run dev
 ```

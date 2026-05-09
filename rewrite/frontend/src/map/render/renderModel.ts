@@ -1,4 +1,4 @@
-import type { TerrainType } from "./transport";
+import type { TerrainType } from "../transport/dto";
 
 export type TerrainTileRender = {
   q: number;
@@ -6,7 +6,10 @@ export type TerrainTileRender = {
   terrain: TerrainType;
   fill: number;
   label: string;
+  detailLabel: string;
   terrainHidden: boolean;
+  featureHidden: boolean;
+  territoryStroke: number | null;
 };
 
 export type RenderModel = {

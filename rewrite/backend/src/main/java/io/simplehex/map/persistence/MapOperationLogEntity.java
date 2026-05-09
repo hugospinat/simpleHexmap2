@@ -37,6 +37,12 @@ public class MapOperationLogEntity {
     @Column(name = "terrain_hidden_value")
     private Boolean terrainHiddenValue;
 
+    @Column(name = "feature_hidden_value")
+    private Boolean featureHiddenValue;
+
+    @Column(name = "territory_faction_id_value", length = 64)
+    private String territoryFactionIdValue;
+
     protected MapOperationLogEntity() {
     }
 
@@ -48,7 +54,9 @@ public class MapOperationLogEntity {
             int cellQ,
             int cellR,
             String terrain,
-            Boolean terrainHiddenValue
+            Boolean terrainHiddenValue,
+            Boolean featureHiddenValue,
+            String territoryFactionIdValue
     ) {
         this.id = id;
         this.sequence = sequence;
@@ -58,6 +66,8 @@ public class MapOperationLogEntity {
         this.cellR = cellR;
         this.terrain = terrain;
         this.terrainHiddenValue = terrainHiddenValue;
+        this.featureHiddenValue = featureHiddenValue;
+        this.territoryFactionIdValue = territoryFactionIdValue;
     }
 
     public MapOperationLogId getId() {
@@ -86,5 +96,13 @@ public class MapOperationLogEntity {
 
     public Boolean getTerrainHiddenValue() {
         return terrainHiddenValue;
+    }
+
+    public Boolean getFeatureHiddenValue() {
+        return featureHiddenValue;
+    }
+
+    public String getTerritoryFactionIdValue() {
+        return territoryFactionIdValue;
     }
 }

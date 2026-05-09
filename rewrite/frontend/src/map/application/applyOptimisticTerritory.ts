@@ -1,10 +1,10 @@
-import type { MapSnapshotDto, TerrainType } from "./transport";
+import type { MapSnapshotDto } from "../transport/dto";
 
-export function applyOptimisticTerrain(
+export function applyOptimisticTerritory(
   snapshot: MapSnapshotDto | null,
   q: number,
   r: number,
-  terrain: TerrainType
+  territoryFactionId: string | null
 ): MapSnapshotDto | null {
   if (!snapshot) {
     return snapshot;
@@ -13,7 +13,7 @@ export function applyOptimisticTerrain(
   return {
     ...snapshot,
     cells: snapshot.cells.map((cell) =>
-      cell.q === q && cell.r === r ? { ...cell, terrain } : cell
+      cell.q === q && cell.r === r ? { ...cell, territoryFactionId } : cell
     )
   };
 }

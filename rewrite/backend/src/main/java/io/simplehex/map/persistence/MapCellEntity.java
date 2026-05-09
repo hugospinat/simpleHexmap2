@@ -21,14 +21,18 @@ public class MapCellEntity {
     @Column(name = "feature_hidden", nullable = false)
     private boolean featureHidden;
 
+    @Column(name = "territory_faction_id", length = 64)
+    private String territoryFactionId;
+
     protected MapCellEntity() {
     }
 
-    public MapCellEntity(MapCellId id, String terrain, boolean terrainHidden, boolean featureHidden) {
+    public MapCellEntity(MapCellId id, String terrain, boolean terrainHidden, boolean featureHidden, String territoryFactionId) {
         this.id = id;
         this.terrain = terrain;
         this.terrainHidden = terrainHidden;
         this.featureHidden = featureHidden;
+        this.territoryFactionId = territoryFactionId;
     }
 
     public MapCellId getId() {
@@ -53,5 +57,17 @@ public class MapCellEntity {
 
     public boolean isFeatureHidden() {
         return featureHidden;
+    }
+
+    public void setFeatureHidden(boolean featureHidden) {
+        this.featureHidden = featureHidden;
+    }
+
+    public String getTerritoryFactionId() {
+        return territoryFactionId;
+    }
+
+    public void setTerritoryFactionId(String territoryFactionId) {
+        this.territoryFactionId = territoryFactionId;
     }
 }

@@ -1,16 +1,16 @@
-package io.simplehex.map.application;
+package io.simplehex.map.bootstrap;
 
-import io.simplehex.map.persistence.JpaMapRepository;
+import io.simplehex.map.persistence.MapPersistenceRepository;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 @Component
-public class MapDataInitializer implements ApplicationRunner {
+public class DemoMapBootstrap implements ApplicationRunner {
 
-    private final JpaMapRepository mapRepository;
+    private final MapPersistenceRepository mapRepository;
 
-    public MapDataInitializer(JpaMapRepository mapRepository) {
+    public DemoMapBootstrap(MapPersistenceRepository mapRepository) {
         this.mapRepository = mapRepository;
     }
 

@@ -14,13 +14,17 @@
   "mapId": "uuid",
   "revision": 12,
   "role": "gm",
+  "factions": [
+    { "id": "amber", "label": "Amber Wardens", "color": "#d08a2f" }
+  ],
   "cells": [
     {
       "q": 0,
       "r": 0,
       "terrain": "plains",
       "terrainHidden": false,
-      "featureHidden": false
+      "featureHidden": false,
+      "territoryFactionId": "amber"
     }
   ]
 }
@@ -32,7 +36,6 @@
 {
   "type": "set_cell_terrain",
   "operationId": "uuid",
-  "actorRole": "gm",
   "cell": { "q": 0, "r": 0 },
   "terrain": "forest"
 }
@@ -42,9 +45,53 @@
 {
   "type": "set_cell_visibility",
   "operationId": "uuid",
-  "actorRole": "gm",
   "cell": { "q": 0, "r": 0 },
   "terrainHidden": true
+}
+```
+
+```json
+{
+  "type": "set_cell_feature_visibility",
+  "operationId": "uuid",
+  "cell": { "q": 0, "r": 0 },
+  "featureHidden": true
+}
+```
+
+```json
+{
+  "type": "set_cell_territory",
+  "operationId": "uuid",
+  "cell": { "q": 0, "r": 0 },
+  "territoryFactionId": "amber"
+}
+```
+
+Command authorization is derived from the authenticated session, not from a client-supplied role field.
+
+## Demo session transport
+
+```json
+GET /api/session
+```
+
+```json
+{
+  "currentActor": {
+    "actorId": "demo-gm",
+    "displayName": "Maris the GM",
+    "role": "gm",
+    "mapMemberships": ["demo-map"]
+  },
+  "availableActors": [
+    {
+      "actorId": "demo-player",
+      "displayName": "Iven the Scout",
+      "role": "player",
+      "mapMemberships": ["demo-map"]
+    }
+  ]
 }
 ```
 
@@ -53,7 +100,7 @@
 WebSocket endpoint:
 
 ```text
-/api/maps/{mapId}/ws?role=gm|player
+/api/maps/{mapId}/ws
 ```
 
 ### `sync_snapshot`
@@ -67,6 +114,7 @@ Sent on connect or when the client must resync from authority.
     "mapId": "uuid",
     "revision": 12,
     "role": "gm",
+    "factions": [],
     "cells": []
   }
 }
@@ -88,7 +136,7 @@ Sent on connect or when the client must resync from authority.
 }
 ```
 
-The same `command_applied` envelope is also used for `set_cell_visibility` with `terrainHidden` instead of `terrain`.
+The same `command_applied` envelope is also used for `set_cell_visibility` with `terrainHidden` instead of `terrain`, for `set_cell_feature_visibility` with `featureHidden`, and for `set_cell_territory` with `territoryFactionId`.
 
 ### `command_rejected`
 
@@ -106,3 +154,4 @@ The same `command_applied` envelope is also used for `set_cell_visibility` with 
 - GM payloads include full terrain visibility fields
 - GM and owner WebSocket sessions receive `command_applied`
 - player WebSocket sessions receive filtered `sync_snapshot` refreshes instead of hidden-capable command deltas
+- HTTP and WebSocket role resolution comes from the authenticated session cookie

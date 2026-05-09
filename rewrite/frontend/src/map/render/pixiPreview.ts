@@ -1,5 +1,5 @@
 import { Application, Color, Container, Graphics, Text } from "pixi.js";
-import type { RenderModel } from "./model/renderModel";
+import type { RenderModel } from "./renderModel";
 
 function drawHex(graphics: Graphics, x: number, y: number, radius: number, fill: number) {
   const angleOffset = Math.PI / 6;
@@ -18,6 +18,27 @@ function drawHex(graphics: Graphics, x: number, y: number, radius: number, fill:
   graphics.stroke({ color: 0xf8e7b9, width: 2, alpha: 0.6 });
 }
 
+function drawHexOutline(graphics: Graphics, x: number, y: number, radius: number, color: number) {
+  const angleOffset = Math.PI / 6;
+  graphics.moveTo(
+    x + Math.cos(angleOffset) * radius,
+    y + Math.sin(angleOffset) * radius
+  );
+
+  for (let side = 1; side <= 6; side += 1) {
+    const angle = angleOffset + (Math.PI / 3) * side;
+    graphics.lineTo(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
+  }
+
+  graphics.closePath();
+  graphics.stroke({ color, width: 6, alpha: 0.9 });
+}
+
+function drawFeatureMarker(graphics: Graphics, x: number, y: number) {
+  graphics.circle(x, y, 18);
+  graphics.stroke({ color: 0xb57cff, width: 4, alpha: 0.95 });
+}
+
 function projectAxialToScreen(q: number, r: number) {
   const originX = 170;
   const originY = 190;
@@ -26,7 +47,7 @@ function projectAxialToScreen(q: number, r: number) {
 
   return {
     x: originX + q * horizontalStep,
-    y: originY + r * verticalStep + q * 0
+    y: originY + r * verticalStep
   };
 }
 
@@ -75,8 +96,20 @@ export async function mountPreviewScene(host: HTMLDivElement, renderModel: Rende
     }
     root.addChild(hex);
 
+    if (tile.featureHidden) {
+      const marker = new Graphics();
+      drawFeatureMarker(marker, position.x, position.y);
+      root.addChild(marker);
+    }
+
+    if (tile.territoryStroke !== null) {
+      const territoryOutline = new Graphics();
+      drawHexOutline(territoryOutline, position.x, position.y, 48, tile.territoryStroke);
+      root.addChild(territoryOutline);
+    }
+
     const label = new Text({
-      text: tile.label,
+      text: tile.detailLabel ? `${tile.label}\n${tile.detailLabel}` : tile.label,
       style: {
         fill: "#f9f6ef",
         fontFamily: "Georgia, serif",

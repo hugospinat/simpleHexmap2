@@ -1,6 +1,6 @@
 package io.simplehex.map.realtime;
 
-import io.simplehex.map.domain.ActorRole;
+import io.simplehex.session.AuthenticatedActor;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,9 +14,9 @@ public class MapRealtimeSessionRegistry {
 
     private final Map<String, CopyOnWriteArrayList<MapWebSocketSession>> sessionsByMap = new ConcurrentHashMap<>();
 
-    public void register(String mapId, ActorRole role, WebSocketSession session) {
+    public void register(String mapId, AuthenticatedActor actor, WebSocketSession session) {
         sessionsByMap.computeIfAbsent(mapId, ignored -> new CopyOnWriteArrayList<>())
-                .add(new MapWebSocketSession(role, session));
+                .add(new MapWebSocketSession(actor, session));
     }
 
     public void remove(WebSocketSession session) {
@@ -28,6 +28,6 @@ public class MapRealtimeSessionRegistry {
         return List.copyOf(sessionsByMap.getOrDefault(mapId, new CopyOnWriteArrayList<>()));
     }
 
-    public record MapWebSocketSession(ActorRole role, WebSocketSession session) {
+    public record MapWebSocketSession(AuthenticatedActor actor, WebSocketSession session) {
     }
 }

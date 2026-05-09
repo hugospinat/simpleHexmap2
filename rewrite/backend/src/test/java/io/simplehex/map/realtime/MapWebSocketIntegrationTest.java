@@ -52,11 +52,13 @@ class MapWebSocketIntegrationTest {
     @Test
     void websocketReceivesInitialSnapshotAndAppliedCommand() throws Exception {
         BlockingQueue<String> messages = new LinkedBlockingQueue<>();
+        String gmCookie = loginAs("demo-gm");
         WebSocket webSocket = HttpClient.newHttpClient()
                 .newWebSocketBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
+                .header(HttpHeaders.COOKIE, gmCookie)
                 .buildAsync(
-                        URI.create("ws://localhost:" + port + "/api/maps/demo-map/ws?role=gm"),
+                        URI.create("ws://localhost:" + port + "/api/maps/demo-map/ws"),
                         new QueueingWebSocketListener(messages))
                 .join();
 
@@ -68,11 +70,11 @@ class MapWebSocketIntegrationTest {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.add(HttpHeaders.COOKIE, gmCookie);
         String requestBody = """
                 {
                   "type": "set_cell_terrain",
                   "operationId": "ws-op-1",
-                  "actorRole": "gm",
                   "cell": { "q": 0, "r": 0 },
                   "terrain": "water"
                 }
@@ -99,11 +101,14 @@ class MapWebSocketIntegrationTest {
     @Test
     void playerWebsocketReceivesFilteredSnapshotAfterVisibilityChange() throws Exception {
         BlockingQueue<String> messages = new LinkedBlockingQueue<>();
+        String playerCookie = loginAs("demo-player");
+        String gmCookie = loginAs("demo-gm");
         WebSocket webSocket = HttpClient.newHttpClient()
                 .newWebSocketBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
+                .header(HttpHeaders.COOKIE, playerCookie)
                 .buildAsync(
-                        URI.create("ws://localhost:" + port + "/api/maps/demo-map/ws?role=player"),
+                        URI.create("ws://localhost:" + port + "/api/maps/demo-map/ws"),
                         new QueueingWebSocketListener(messages))
                 .join();
 
@@ -112,14 +117,14 @@ class MapWebSocketIntegrationTest {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.add(HttpHeaders.COOKIE, gmCookie);
         String requestBody = """
-                                {
-                                    "type": "set_cell_visibility",
-                                    "operationId": "ws-visibility-1",
-                                    "actorRole": "gm",
-                                    "cell": { "q": 0, "r": 0 },
-                                    "terrainHidden": true
-                                }
+                                 {
+                                     "type": "set_cell_visibility",
+                                     "operationId": "ws-visibility-1",
+                                     "cell": { "q": 0, "r": 0 },
+                                     "terrainHidden": true
+                                 }
                                 """;
 
         ResponseEntity<String> response = restTemplate.postForEntity(
@@ -138,6 +143,107 @@ class MapWebSocketIntegrationTest {
         assertThat(((java.util.List<?>) snapshot.get("cells"))).hasSize(2);
 
         webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "done").join();
+    }
+
+    @Test
+    void gmWebsocketReceivesFeatureVisibilityCommand() throws Exception {
+        BlockingQueue<String> messages = new LinkedBlockingQueue<>();
+        String gmCookie = loginAs("demo-gm");
+        WebSocket webSocket = HttpClient.newHttpClient()
+                .newWebSocketBuilder()
+                .connectTimeout(Duration.ofSeconds(5))
+                .header(HttpHeaders.COOKIE, gmCookie)
+                .buildAsync(
+                        URI.create("ws://localhost:" + port + "/api/maps/demo-map/ws"),
+                        new QueueingWebSocketListener(messages))
+                .join();
+
+        String initialMessage = messages.poll(5, TimeUnit.SECONDS);
+        assertThat(initialMessage).isNotNull();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.add(HttpHeaders.COOKIE, gmCookie);
+        String requestBody = """
+                {
+                  "type": "set_cell_feature_visibility",
+                  "operationId": "ws-feature-1",
+                  "cell": { "q": 1, "r": 0 },
+                  "featureHidden": true
+                }
+                """;
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                "http://localhost:" + port + "/api/maps/demo-map/commands",
+                new HttpEntity<>(requestBody, headers),
+                String.class);
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+
+        String appliedMessage = messages.poll(5, TimeUnit.SECONDS);
+        assertThat(appliedMessage).isNotNull();
+        Map<String, Object> appliedPayload = objectMapper.readValue(appliedMessage, new TypeReference<>() {
+        });
+        assertThat(appliedPayload.get("type")).isEqualTo("command_applied");
+        Map<?, ?> command = (Map<?, ?>) appliedPayload.get("command");
+        assertThat(command.get("type")).isEqualTo("set_cell_feature_visibility");
+        assertThat(command.get("featureHidden")).isEqualTo(true);
+
+        webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "done").join();
+    }
+
+    @Test
+    void gmWebsocketReceivesTerritoryCommand() throws Exception {
+        BlockingQueue<String> messages = new LinkedBlockingQueue<>();
+        String gmCookie = loginAs("demo-gm");
+        WebSocket webSocket = HttpClient.newHttpClient()
+                .newWebSocketBuilder()
+                .connectTimeout(Duration.ofSeconds(5))
+                .header(HttpHeaders.COOKIE, gmCookie)
+                .buildAsync(
+                        URI.create("ws://localhost:" + port + "/api/maps/demo-map/ws"),
+                        new QueueingWebSocketListener(messages))
+                .join();
+
+        String initialMessage = messages.poll(5, TimeUnit.SECONDS);
+        assertThat(initialMessage).isNotNull();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.add(HttpHeaders.COOKIE, gmCookie);
+        String requestBody = """
+                {
+                  "type": "set_cell_territory",
+                  "operationId": "ws-territory-1",
+                  "cell": { "q": 0, "r": 0 },
+                  "territoryFactionId": "amber"
+                }
+                """;
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                "http://localhost:" + port + "/api/maps/demo-map/commands",
+                new HttpEntity<>(requestBody, headers),
+                String.class);
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+
+        String appliedMessage = messages.poll(5, TimeUnit.SECONDS);
+        assertThat(appliedMessage).isNotNull();
+        Map<String, Object> appliedPayload = objectMapper.readValue(appliedMessage, new TypeReference<>() {
+        });
+        assertThat(appliedPayload.get("type")).isEqualTo("command_applied");
+        Map<?, ?> command = (Map<?, ?>) appliedPayload.get("command");
+        assertThat(command.get("type")).isEqualTo("set_cell_territory");
+        assertThat(command.get("territoryFactionId")).isEqualTo("amber");
+
+        webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "done").join();
+    }
+
+    private String loginAs(String actorId) {
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                "http://localhost:" + port + "/api/session/actors/" + actorId,
+                HttpEntity.EMPTY,
+                String.class);
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        return response.getHeaders().getFirst(HttpHeaders.SET_COOKIE).split(";", 2)[0];
     }
 
     private static final class QueueingWebSocketListener implements Listener {

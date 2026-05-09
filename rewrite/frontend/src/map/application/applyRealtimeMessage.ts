@@ -2,7 +2,7 @@ import type {
   CommandAppliedResponseDto,
   MapSnapshotDto,
   RealtimeMessageDto
-} from "./transport";
+} from "../transport/dto";
 
 function applyCommand(snapshot: MapSnapshotDto, message: CommandAppliedResponseDto): MapSnapshotDto {
   if (message.command.type === "set_cell_terrain" && message.command.terrain !== null) {
@@ -19,14 +19,42 @@ function applyCommand(snapshot: MapSnapshotDto, message: CommandAppliedResponseD
     };
   }
 
-  const { cell: targetCell, terrainHidden } = message.command;
+  if (message.command.type === "set_cell_visibility" && message.command.terrainHidden !== null) {
+    const { cell: targetCell, terrainHidden } = message.command;
+
+    return {
+      ...snapshot,
+      revision: message.sequence,
+      cells: snapshot.cells.map((cell) =>
+        cell.q === targetCell.q && cell.r === targetCell.r
+          ? { ...cell, terrainHidden }
+          : cell
+      )
+    };
+  }
+
+  if (message.command.type === "set_cell_feature_visibility" && message.command.featureHidden !== null) {
+    const { cell: targetCell, featureHidden } = message.command;
+
+    return {
+      ...snapshot,
+      revision: message.sequence,
+      cells: snapshot.cells.map((cell) =>
+        cell.q === targetCell.q && cell.r === targetCell.r
+          ? { ...cell, featureHidden }
+          : cell
+      )
+    };
+  }
+
+  const { cell: targetCell, territoryFactionId } = message.command;
 
   return {
     ...snapshot,
     revision: message.sequence,
     cells: snapshot.cells.map((cell) =>
       cell.q === targetCell.q && cell.r === targetCell.r
-        ? { ...cell, terrainHidden }
+        ? { ...cell, territoryFactionId }
         : cell
     )
   };

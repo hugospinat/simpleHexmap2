@@ -1,15 +1,14 @@
 package io.simplehex.map.transport;
 
 import io.simplehex.map.application.MapService;
-import io.simplehex.map.domain.ActorRole;
+import io.simplehex.session.DemoSessionService;
 import jakarta.validation.Valid;
-
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -17,24 +16,27 @@ import org.springframework.web.bind.annotation.RestController;
 public class MapController {
 
     private final MapService mapService;
+    private final DemoSessionService demoSessionService;
 
-    public MapController(MapService mapService) {
+    public MapController(MapService mapService, DemoSessionService demoSessionService) {
         this.mapService = mapService;
+        this.demoSessionService = demoSessionService;
     }
 
     @GetMapping("/{mapId}")
     public MapSnapshotResponse getMapSnapshot(
             @PathVariable String mapId,
-            @RequestParam(defaultValue = "gm") String role
+            HttpServletRequest request
     ) {
-        return mapService.getSnapshot(mapId, ActorRole.fromValue(role));
+        return MapTransportMapper.toResponse(mapService.getSnapshot(mapId, demoSessionService.requireActor(request, mapId)));
     }
 
     @PostMapping("/{mapId}/commands")
     public CommandAppliedResponse applyCommand(
             @PathVariable String mapId,
-            @Valid @RequestBody MapCommandRequest request
+            HttpServletRequest httpRequest,
+            @Valid @RequestBody MapCommandRequest commandRequest
     ) {
-        return mapService.applyCommand(mapId, request);
+        return MapTransportMapper.toResponse(mapService.applyCommand(mapId, commandRequest, demoSessionService.requireActor(httpRequest, mapId)));
     }
 }

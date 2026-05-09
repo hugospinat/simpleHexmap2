@@ -1,15 +1,15 @@
 package io.simplehex.map.realtime;
 
 import io.simplehex.map.application.MapCommandException;
-import io.simplehex.map.domain.ActorRole;
+import io.simplehex.session.AuthenticatedActor;
 import java.net.URI;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
-import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
 public class MapWebSocketHandler extends TextWebSocketHandler {
@@ -25,9 +25,12 @@ public class MapWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         String mapId = extractMapId(session);
-        ActorRole role = extractRole(session);
-        sessionRegistry.register(mapId, role, session);
-        realtimeNotifier.sendInitialSnapshot(mapId, role, session);
+        AuthenticatedActor actor = extractActor(session);
+        if (!actor.isMemberOf(mapId)) {
+            throw new MapCommandException(HttpStatus.FORBIDDEN, "map_access_forbidden");
+        }
+        sessionRegistry.register(mapId, actor, session);
+        realtimeNotifier.sendInitialSnapshot(mapId, actor, session);
     }
 
     @Override
@@ -54,13 +57,11 @@ public class MapWebSocketHandler extends TextWebSocketHandler {
         return segments.get(segments.size() - 2);
     }
 
-    private ActorRole extractRole(WebSocketSession session) {
-        URI uri = session.getUri();
-        if (uri == null) {
-            return ActorRole.GM;
+    private AuthenticatedActor extractActor(WebSocketSession session) {
+        Object actor = session.getAttributes().get(SessionHandshakeInterceptor.AUTHENTICATED_ACTOR_ATTRIBUTE);
+        if (actor instanceof AuthenticatedActor authenticatedActor) {
+            return authenticatedActor;
         }
-
-        String role = UriComponentsBuilder.fromUri(uri).build().getQueryParams().getFirst("role");
-        return role == null ? ActorRole.GM : ActorRole.fromValue(role);
+        throw new MapCommandException(HttpStatus.UNAUTHORIZED, "session_required");
     }
 }
