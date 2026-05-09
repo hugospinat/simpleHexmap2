@@ -2,7 +2,6 @@ package io.simplehex.map.persistence;
 
 import io.simplehex.map.application.MapCommandException;
 import io.simplehex.map.domain.ActorRole;
-import io.simplehex.map.domain.ActorRole;
 import io.simplehex.map.domain.HexCoord;
 import io.simplehex.map.domain.TerrainType;
 import io.simplehex.map.transport.CellSnapshotDto;
@@ -54,14 +53,14 @@ public class JpaMapRepository {
                 .setParameter("mapId", mapId)
                 .getResultList()
                 .stream()
-                 .map(cell -> new CellSnapshotDto(
-                         cell.getId().getQ(),
-                         cell.getId().getR(),
-                         TerrainType.fromValue(cell.getTerrain()),
-                         cell.isTerrainHidden(),
-                         cell.isFeatureHidden(),
-                         cell.getTerritoryFactionId()))
-                 .toList();
+                .map(cell -> new CellSnapshotDto(
+                        cell.getId().getQ(),
+                        cell.getId().getR(),
+                        TerrainType.fromValue(cell.getTerrain()),
+                        cell.isTerrainHidden(),
+                        cell.isFeatureHidden(),
+                        cell.getTerritoryFactionId()))
+                .toList();
     }
 
     public boolean cellExists(String mapId, HexCoord coord) {
