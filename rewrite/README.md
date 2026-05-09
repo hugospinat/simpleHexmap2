@@ -5,7 +5,7 @@ This directory contains the clean-room implementation workspace for simpleHexmap
 Current status:
 
 - docs-first architecture pack started
-- frontend terrain, visibility, feature visibility, and territory slices are wired to the backend over HTTP and WebSocket, with GM/player role switching
+- frontend terrain, visibility, feature visibility, and territory slices are wired to the backend over HTTP and WebSocket, with demo session-backed actor switching
 - backend terrain, visibility, feature visibility, and territory slices are persisted through Spring Data JPA and validated with Spring integration tests under Java 21 and Gradle 9.1
 
 ## Layout
@@ -19,12 +19,18 @@ Current status:
 The current implemented slice proves the full path for terrain editing, visibility, feature visibility, and territory ownership:
 
 - load a map snapshot
+- resolve or switch an authenticated demo session
 - submit a terrain, visibility, feature-visibility, or territory command
 - assign a server sequence
 - persist the result through JPA into SQL tables
 - broadcast an authoritative update
 - reconcile on the frontend with `operationId`
 - redraw the preview with distinct hidden-terrain, hidden-feature, and faction-territory states
+
+The current demo session slice uses server-issued cookies and two seeded identities:
+
+- `demo-gm` → GM editor for `demo-map`
+- `demo-player` → player viewer for `demo-map`
 
 ## Validation
 

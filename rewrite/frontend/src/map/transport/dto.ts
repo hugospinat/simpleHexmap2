@@ -20,9 +20,21 @@ export type FactionDto = {
 export type MapSnapshotDto = {
   mapId: string;
   revision: number;
-  role: "gm" | "player";
+  role: ActorRole;
   factions: FactionDto[];
   cells: CellDto[];
+};
+
+export type SessionActorDto = {
+  actorId: string;
+  displayName: string;
+  role: ActorRole;
+  mapMemberships: string[];
+};
+
+export type SessionDto = {
+  currentActor: SessionActorDto;
+  availableActors: SessionActorDto[];
 };
 
 export type CellRefDto = {
@@ -33,7 +45,6 @@ export type CellRefDto = {
 export type TerrainCommandRequestDto = {
   type: "set_cell_terrain";
   operationId: string;
-  actorRole: ActorRole;
   cell: CellRefDto;
   terrain: TerrainType;
 };
@@ -41,7 +52,6 @@ export type TerrainCommandRequestDto = {
 export type CellVisibilityCommandRequestDto = {
   type: "set_cell_visibility";
   operationId: string;
-  actorRole: ActorRole;
   cell: CellRefDto;
   terrainHidden: boolean;
 };
@@ -49,7 +59,6 @@ export type CellVisibilityCommandRequestDto = {
 export type FeatureVisibilityCommandRequestDto = {
   type: "set_cell_feature_visibility";
   operationId: string;
-  actorRole: ActorRole;
   cell: CellRefDto;
   featureHidden: boolean;
 };
@@ -57,7 +66,6 @@ export type FeatureVisibilityCommandRequestDto = {
 export type TerritoryCommandRequestDto = {
   type: "set_cell_territory";
   operationId: string;
-  actorRole: ActorRole;
   cell: CellRefDto;
   territoryFactionId: string | null;
 };

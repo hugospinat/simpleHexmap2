@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  activateSession,
   applyFeatureVisibilityCommand,
   applyTerrainCommand,
   applyTerritoryCommand,
   applyVisibilityCommand,
   connectMapRealtime,
+  fetchSession,
   fetchMapSnapshot
 } from "../transport/mapApi";
 import { applyOptimisticTerritory } from "./applyOptimisticTerritory";
 import { applyOptimisticFeatureVisibility, applyOptimisticVisibility } from "./applyOptimisticVisibility";
 import { applyOptimisticTerrain } from "./applyOptimisticTerrain";
 import { applyRealtimeMessage } from "./applyRealtimeMessage";
-import type { ActorRole, MapSnapshotDto, TerrainType } from "../transport/dto";
+import type { MapSnapshotDto, SessionActorDto, SessionDto, TerrainType } from "../transport/dto";
 
 type RealtimeStatus = "connecting" | "open" | "closed" | "error";
 
@@ -21,8 +23,8 @@ type MapSliceState = {
   isLoading: boolean;
   isMutating: boolean;
   realtimeStatus: RealtimeStatus;
-  role: "gm" | "player";
-  setRole: (role: "gm" | "player") => void;
+  session: SessionDto | null;
+  switchActor: (actorId: string) => void;
   repaintCell: (q: number, r: number, terrain: TerrainType) => void;
   setTerrainVisibility: (q: number, r: number, terrainHidden: boolean) => void;
   setFeatureVisibility: (q: number, r: number, featureHidden: boolean) => void;
@@ -36,14 +38,18 @@ export function useMapSlice(): MapSliceState {
   const [isLoading, setIsLoading] = useState(true);
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting");
   const [pendingOperationIds, setPendingOperationIds] = useState<string[]>([]);
-  const [role, setRole] = useState<"gm" | "player">("gm");
+  const [session, setSession] = useState<SessionDto | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
+  const activeActor: SessionActorDto | null = session?.currentActor ?? null;
 
   const loadSnapshot = () => {
+    if (!activeActor) {
+      return;
+    }
     setIsLoading(true);
     setError(null);
 
-    void fetchMapSnapshot(role)
+    void fetchMapSnapshot()
       .then((nextSnapshot) => {
         setSnapshot(nextSnapshot);
       })
@@ -56,13 +62,31 @@ export function useMapSlice(): MapSliceState {
   };
 
   useEffect(() => {
-    loadSnapshot();
-  }, [role]);
+    setIsLoading(true);
+    setError(null);
+    void fetchSession()
+      .then((nextSession) => {
+        setSession(nextSession);
+      })
+      .catch((loadError: Error) => {
+        setError(loadError.message);
+        setIsLoading(false);
+      });
+  }, []);
 
   useEffect(() => {
+    if (!activeActor) {
+      return;
+    }
+    loadSnapshot();
+  }, [activeActor?.actorId]);
+
+  useEffect(() => {
+    if (!activeActor) {
+      return;
+    }
     setRealtimeStatus("connecting");
     const socket = connectMapRealtime(
-      role,
       (message) => {
         setRealtimeStatus("open");
         if (message.type === "command_applied") {
@@ -87,15 +111,33 @@ export function useMapSlice(): MapSliceState {
       socket.close();
       socketRef.current = null;
     };
-  }, [role]);
+  }, [activeActor?.actorId]);
+
+  const switchActor = (actorId: string) => {
+    setIsLoading(true);
+    setError(null);
+    setSnapshot(null);
+
+    void activateSession(actorId)
+      .then((nextSession) => {
+        setSession(nextSession);
+      })
+      .catch((commandError: Error) => {
+        setError(commandError.message);
+        setIsLoading(false);
+      });
+  };
 
   const repaintCell = (q: number, r: number, terrain: TerrainType) => {
+    if (!activeActor) {
+      return;
+    }
     const operationId = crypto.randomUUID();
     setError(null);
     setPendingOperationIds((current) => [...current, operationId]);
     setSnapshot((currentSnapshot) => applyOptimisticTerrain(currentSnapshot, q, r, terrain));
 
-    void applyTerrainCommand(operationId, { q, r }, terrain, role).catch((commandError: Error) => {
+    void applyTerrainCommand(operationId, { q, r }, terrain).catch((commandError: Error) => {
       setPendingOperationIds((current) => current.filter((value) => value !== operationId));
       setError(commandError.message);
       loadSnapshot();
@@ -103,12 +145,17 @@ export function useMapSlice(): MapSliceState {
   };
 
   const setTerrainVisibility = (q: number, r: number, terrainHidden: boolean) => {
+    if (!activeActor) {
+      return;
+    }
     const operationId = crypto.randomUUID();
     setError(null);
     setPendingOperationIds((current) => [...current, operationId]);
-    setSnapshot((currentSnapshot) => applyOptimisticVisibility(currentSnapshot, q, r, terrainHidden, role));
+    setSnapshot((currentSnapshot) =>
+      applyOptimisticVisibility(currentSnapshot, q, r, terrainHidden, activeActor.role)
+    );
 
-    void applyVisibilityCommand(operationId, { q, r }, terrainHidden, role).catch((commandError: Error) => {
+    void applyVisibilityCommand(operationId, { q, r }, terrainHidden).catch((commandError: Error) => {
       setPendingOperationIds((current) => current.filter((value) => value !== operationId));
       setError(commandError.message);
       loadSnapshot();
@@ -116,6 +163,9 @@ export function useMapSlice(): MapSliceState {
   };
 
   const setFeatureVisibility = (q: number, r: number, featureHidden: boolean) => {
+    if (!activeActor) {
+      return;
+    }
     const operationId = crypto.randomUUID();
     setError(null);
     setPendingOperationIds((current) => [...current, operationId]);
@@ -123,7 +173,7 @@ export function useMapSlice(): MapSliceState {
       applyOptimisticFeatureVisibility(currentSnapshot, q, r, featureHidden)
     );
 
-    void applyFeatureVisibilityCommand(operationId, { q, r }, featureHidden, role).catch(
+    void applyFeatureVisibilityCommand(operationId, { q, r }, featureHidden).catch(
       (commandError: Error) => {
         setPendingOperationIds((current) => current.filter((value) => value !== operationId));
         setError(commandError.message);
@@ -133,6 +183,9 @@ export function useMapSlice(): MapSliceState {
   };
 
   const setTerritoryFaction = (q: number, r: number, territoryFactionId: string | null) => {
+    if (!activeActor) {
+      return;
+    }
     const operationId = crypto.randomUUID();
     setError(null);
     setPendingOperationIds((current) => [...current, operationId]);
@@ -140,7 +193,7 @@ export function useMapSlice(): MapSliceState {
       applyOptimisticTerritory(currentSnapshot, q, r, territoryFactionId)
     );
 
-    void applyTerritoryCommand(operationId, { q, r }, territoryFactionId, role).catch(
+    void applyTerritoryCommand(operationId, { q, r }, territoryFactionId).catch(
       (commandError: Error) => {
         setPendingOperationIds((current) => current.filter((value) => value !== operationId));
         setError(commandError.message);
@@ -155,8 +208,8 @@ export function useMapSlice(): MapSliceState {
     isLoading,
     isMutating: pendingOperationIds.length > 0,
     realtimeStatus,
-    role,
-    setRole,
+    session,
+    switchActor,
     repaintCell,
     setTerrainVisibility,
     setFeatureVisibility,

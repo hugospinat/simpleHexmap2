@@ -1,11 +1,11 @@
-import type { MapSnapshotDto } from "../transport/dto";
+import type { ActorRole, MapSnapshotDto } from "../transport/dto";
 
 export function applyOptimisticVisibility(
   snapshot: MapSnapshotDto | null,
   q: number,
   r: number,
   terrainHidden: boolean,
-  role: "gm" | "player"
+  role: ActorRole
 ): MapSnapshotDto | null {
   if (!snapshot) {
     return snapshot;

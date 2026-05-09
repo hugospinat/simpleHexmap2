@@ -1,6 +1,5 @@
 package io.simplehex.map.transport;
 
-import io.simplehex.map.domain.ActorRole;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -15,8 +14,6 @@ public interface MapCommandRequest {
     String type();
 
     String operationId();
-
-    ActorRole actorRole();
 
     CellRefDto cell();
 }

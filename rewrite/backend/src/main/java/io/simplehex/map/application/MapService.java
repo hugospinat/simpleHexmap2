@@ -14,6 +14,7 @@ import io.simplehex.map.transport.FeatureVisibilityCommandRequest;
 import io.simplehex.map.transport.MapCommandRequest;
 import io.simplehex.map.transport.MapSnapshotResponse;
 import io.simplehex.map.transport.TerrainCommandRequest;
+import io.simplehex.session.AuthenticatedActor;
 import java.util.List;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
@@ -35,14 +36,20 @@ public class MapService {
         this.mapRepository = mapRepository;
     }
 
-    public MapSnapshotResponse getSnapshot(String mapId, ActorRole role) {
+    public MapSnapshotResponse getSnapshot(String mapId, AuthenticatedActor actor) {
         MapPersistenceRecord map = requireMap(mapId);
-        return new MapSnapshotResponse(map.mapId(), map.revision(), role, DEMO_FACTIONS, mapRepository.findCells(mapId, role));
+        if (!actor.isMemberOf(mapId)) {
+            throw new MapCommandException(HttpStatus.FORBIDDEN, "map_access_forbidden");
+        }
+        return new MapSnapshotResponse(map.mapId(), map.revision(), actor.role(), DEMO_FACTIONS, mapRepository.findCells(mapId, actor.role()));
     }
 
     @Transactional
-    public CommandAppliedResponse applyCommand(String mapId, MapCommandRequest request) {
-        if (!request.actorRole().canEditMapContent()) {
+    public CommandAppliedResponse applyCommand(String mapId, MapCommandRequest request, AuthenticatedActor actor) {
+        if (!actor.isMemberOf(mapId)) {
+            throw new MapCommandException(HttpStatus.FORBIDDEN, "map_access_forbidden");
+        }
+        if (!actor.role().canEditMapContent()) {
             throw new MapCommandException(HttpStatus.FORBIDDEN, "terrain_edit_forbidden");
         }
 
@@ -61,7 +68,7 @@ public class MapService {
                                 storedCommand.terrainHidden(),
                                 storedCommand.featureHidden(),
                                 storedCommand.territoryFactionId())))
-                .orElseGet(() -> applyNewCommand(mapId, request));
+                .orElseGet(() -> applyNewCommand(mapId, request, actor.role()));
     }
 
     @Transactional
@@ -69,24 +76,24 @@ public class MapService {
         mapRepository.resetSeedData();
     }
 
-    private CommandAppliedResponse applyNewCommand(String mapId, MapCommandRequest request) {
+    private CommandAppliedResponse applyNewCommand(String mapId, MapCommandRequest request, ActorRole actorRole) {
         if (request instanceof TerrainCommandRequest terrainCommandRequest) {
-            return applyTerrainCommand(mapId, terrainCommandRequest);
+            return applyTerrainCommand(mapId, terrainCommandRequest, actorRole);
         }
         if (request instanceof CellVisibilityCommandRequest visibilityCommandRequest) {
-            return applyVisibilityCommand(mapId, visibilityCommandRequest);
+            return applyVisibilityCommand(mapId, visibilityCommandRequest, actorRole);
         }
         if (request instanceof FeatureVisibilityCommandRequest featureVisibilityCommandRequest) {
-            return applyFeatureVisibilityCommand(mapId, featureVisibilityCommandRequest);
+            return applyFeatureVisibilityCommand(mapId, featureVisibilityCommandRequest, actorRole);
         }
         if (request instanceof CellTerritoryCommandRequest territoryCommandRequest) {
-            return applyTerritoryCommand(mapId, territoryCommandRequest);
+            return applyTerritoryCommand(mapId, territoryCommandRequest, actorRole);
         }
 
         throw new MapCommandException(HttpStatus.BAD_REQUEST, "unsupported_command_type");
     }
 
-    private CommandAppliedResponse applyTerrainCommand(String mapId, TerrainCommandRequest request) {
+    private CommandAppliedResponse applyTerrainCommand(String mapId, TerrainCommandRequest request, ActorRole actorRole) {
         if (!"set_cell_terrain".equals(request.type())) {
             throw new MapCommandException(HttpStatus.BAD_REQUEST, "unsupported_command_type");
         }
@@ -98,7 +105,7 @@ public class MapService {
 
         mapRepository.updateCellTerrain(mapId, coord, request.terrain());
         long nextRevision = mapRepository.incrementRevision(mapId);
-        mapRepository.insertTerrainCommandLog(mapId, request, nextRevision);
+        mapRepository.insertTerrainCommandLog(mapId, request, actorRole, nextRevision);
 
         CommandAppliedResponse response = new CommandAppliedResponse(
                 "command_applied",
@@ -116,7 +123,7 @@ public class MapService {
         return response;
     }
 
-    private CommandAppliedResponse applyVisibilityCommand(String mapId, CellVisibilityCommandRequest request) {
+    private CommandAppliedResponse applyVisibilityCommand(String mapId, CellVisibilityCommandRequest request, ActorRole actorRole) {
         if (!"set_cell_visibility".equals(request.type())) {
             throw new MapCommandException(HttpStatus.BAD_REQUEST, "unsupported_command_type");
         }
@@ -128,7 +135,7 @@ public class MapService {
 
         mapRepository.updateCellTerrainHidden(mapId, coord, request.terrainHidden());
         long nextRevision = mapRepository.incrementRevision(mapId);
-        mapRepository.insertVisibilityCommandLog(mapId, request, nextRevision);
+        mapRepository.insertVisibilityCommandLog(mapId, request, actorRole, nextRevision);
 
         CommandAppliedResponse response = new CommandAppliedResponse(
                 "command_applied",
@@ -146,7 +153,7 @@ public class MapService {
         return response;
     }
 
-    private CommandAppliedResponse applyFeatureVisibilityCommand(String mapId, FeatureVisibilityCommandRequest request) {
+    private CommandAppliedResponse applyFeatureVisibilityCommand(String mapId, FeatureVisibilityCommandRequest request, ActorRole actorRole) {
         if (!"set_cell_feature_visibility".equals(request.type())) {
             throw new MapCommandException(HttpStatus.BAD_REQUEST, "unsupported_command_type");
         }
@@ -158,7 +165,7 @@ public class MapService {
 
         mapRepository.updateCellFeatureHidden(mapId, coord, request.featureHidden());
         long nextRevision = mapRepository.incrementRevision(mapId);
-        mapRepository.insertFeatureVisibilityCommandLog(mapId, request, nextRevision);
+        mapRepository.insertFeatureVisibilityCommandLog(mapId, request, actorRole, nextRevision);
 
         CommandAppliedResponse response = new CommandAppliedResponse(
                 "command_applied",
@@ -176,7 +183,7 @@ public class MapService {
         return response;
     }
 
-    private CommandAppliedResponse applyTerritoryCommand(String mapId, CellTerritoryCommandRequest request) {
+    private CommandAppliedResponse applyTerritoryCommand(String mapId, CellTerritoryCommandRequest request, ActorRole actorRole) {
         if (!"set_cell_territory".equals(request.type())) {
             throw new MapCommandException(HttpStatus.BAD_REQUEST, "unsupported_command_type");
         }
@@ -192,7 +199,7 @@ public class MapService {
 
         mapRepository.updateCellTerritoryFaction(mapId, coord, request.territoryFactionId());
         long nextRevision = mapRepository.incrementRevision(mapId);
-        mapRepository.insertTerritoryCommandLog(mapId, request, nextRevision);
+        mapRepository.insertTerritoryCommandLog(mapId, request, actorRole, nextRevision);
 
         CommandAppliedResponse response = new CommandAppliedResponse(
                 "command_applied",

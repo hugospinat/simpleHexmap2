@@ -21,26 +21,29 @@ Server responsibilities:
 
 ```text
 frontend boot
+-> GET /api/session to resolve or create a demo actor session
 -> HTTP snapshot fetch for fast initial paint
--> WebSocket connect to /api/maps/{mapId}/ws?role=gm|player
+-> WebSocket connect to /api/maps/{mapId}/ws with the authenticated session cookie
 -> server sends sync_snapshot
 -> client submits set_cell_terrain, set_cell_visibility, set_cell_feature_visibility, or set_cell_territory over HTTP
 -> server validates and sequences
 -> server persists operation + current cell projection
 -> server emits command_applied to GM sessions
 -> server emits sync_snapshot to player sessions
--> client matches `operationId`, clears its pending command, and patches local terrain or visibility state from the authoritative event
+-> client matches `operationId`, clears its pending command, and patches local terrain, visibility, feature, or territory state from the authoritative event
 ```
 
 ## Implemented transport surfaces
 
-- `GET /api/maps/{mapId}?role=gm|player`
+- `GET /api/session`
+- `POST /api/session/actors/{actorId}`
+- `GET /api/maps/{mapId}`
 - `POST /api/maps/{mapId}/commands`
-- `WS /api/maps/{mapId}/ws?role=gm|player`
+- `WS /api/maps/{mapId}/ws`
 
 The current frontend still keeps an explicit HTTP refresh action as a fallback, but the normal terrain, visibility, feature visibility, and territory mutation flow no longer reloads the snapshot after each command.
 
-The current frontend also exposes a local GM/player role switch so the visibility filter, feature visibility preview, and territory preview can be observed directly against the same backend slice.
+The current frontend now resolves a cookie-backed demo actor session and can switch between seeded GM/player identities so the visibility filter, feature visibility preview, and territory preview can be observed against server-enforced authorization.
 
 ## Reconnect policy
 

@@ -68,12 +68,12 @@ Input:
 - `r`
 - `terrain`
 - `operationId`
-- `actorRole`
 
 Behavior:
 
 - creates the cell if the product later supports sparse maps; for the first slice assume the cell already exists
 - updates only the terrain field
+- derives actor identity and role from the authenticated session
 - increments the authoritative revision through server sequencing
 - emits an authoritative terrain delta
 - returns the authoritative `operationId` so the client can clear its local pending command
@@ -94,12 +94,12 @@ Input:
 - `r`
 - `territoryFactionId?`
 - `operationId`
-- `actorRole`
 
 Behavior:
 
 - updates only the territory ownership field for the target cell
 - accepts `null` to clear territory ownership
+- derives actor identity and role from the authenticated session
 - validates faction ids against the server-advertised faction catalog
 - increments the authoritative revision through server sequencing
 - emits an authoritative territory delta

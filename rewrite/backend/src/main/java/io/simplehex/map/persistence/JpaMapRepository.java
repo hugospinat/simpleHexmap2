@@ -2,6 +2,7 @@ package io.simplehex.map.persistence;
 
 import io.simplehex.map.application.MapCommandException;
 import io.simplehex.map.domain.ActorRole;
+import io.simplehex.map.domain.ActorRole;
 import io.simplehex.map.domain.HexCoord;
 import io.simplehex.map.domain.TerrainType;
 import io.simplehex.map.transport.CellSnapshotDto;
@@ -133,12 +134,12 @@ public class JpaMapRepository {
         entity.setTerritoryFactionId(territoryFactionId);
     }
 
-    public void insertTerrainCommandLog(String mapId, TerrainCommandRequest request, long sequence) {
+    public void insertTerrainCommandLog(String mapId, TerrainCommandRequest request, ActorRole actorRole, long sequence) {
         entityManager.persist(new MapOperationLogEntity(
                 new MapOperationLogId(mapId, request.operationId()),
                 sequence,
                 request.type(),
-                request.actorRole().value(),
+                actorRole.value(),
                 request.cell().q(),
                 request.cell().r(),
                 request.terrain().value(),
@@ -147,12 +148,12 @@ public class JpaMapRepository {
                 null));
     }
 
-    public void insertVisibilityCommandLog(String mapId, CellVisibilityCommandRequest request, long sequence) {
+    public void insertVisibilityCommandLog(String mapId, CellVisibilityCommandRequest request, ActorRole actorRole, long sequence) {
         entityManager.persist(new MapOperationLogEntity(
                 new MapOperationLogId(mapId, request.operationId()),
                 sequence,
                 request.type(),
-                request.actorRole().value(),
+                actorRole.value(),
                 request.cell().q(),
                 request.cell().r(),
                 null,
@@ -161,12 +162,12 @@ public class JpaMapRepository {
                 null));
     }
 
-    public void insertFeatureVisibilityCommandLog(String mapId, FeatureVisibilityCommandRequest request, long sequence) {
+    public void insertFeatureVisibilityCommandLog(String mapId, FeatureVisibilityCommandRequest request, ActorRole actorRole, long sequence) {
         entityManager.persist(new MapOperationLogEntity(
                 new MapOperationLogId(mapId, request.operationId()),
                 sequence,
                 request.type(),
-                request.actorRole().value(),
+                actorRole.value(),
                 request.cell().q(),
                 request.cell().r(),
                 null,
@@ -175,12 +176,12 @@ public class JpaMapRepository {
                 null));
     }
 
-    public void insertTerritoryCommandLog(String mapId, CellTerritoryCommandRequest request, long sequence) {
+    public void insertTerritoryCommandLog(String mapId, CellTerritoryCommandRequest request, ActorRole actorRole, long sequence) {
         entityManager.persist(new MapOperationLogEntity(
                 new MapOperationLogId(mapId, request.operationId()),
                 sequence,
                 request.type(),
-                request.actorRole().value(),
+                actorRole.value(),
                 request.cell().q(),
                 request.cell().r(),
                 null,

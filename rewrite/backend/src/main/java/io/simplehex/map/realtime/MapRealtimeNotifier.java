@@ -4,6 +4,7 @@ import io.simplehex.map.application.MapCommandAppliedEvent;
 import io.simplehex.map.application.MapCommandException;
 import io.simplehex.map.application.MapService;
 import io.simplehex.map.domain.ActorRole;
+import io.simplehex.session.AuthenticatedActor;
 import java.io.IOException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -38,18 +39,18 @@ public class MapRealtimeNotifier {
                 continue;
             }
 
-            Object payload = target.role() == ActorRole.PLAYER
-                    ? new SyncSnapshotMessage("sync_snapshot", mapService.getSnapshot(event.mapId(), ActorRole.PLAYER))
+            Object payload = target.actor().role() == ActorRole.PLAYER
+                    ? new SyncSnapshotMessage("sync_snapshot", mapService.getSnapshot(event.mapId(), target.actor()))
                     : event.response();
 
             sendJson(target.session(), payload);
         }
     }
 
-    public void sendInitialSnapshot(String mapId, ActorRole role, WebSocketSession session) {
+    public void sendInitialSnapshot(String mapId, AuthenticatedActor actor, WebSocketSession session) {
         SyncSnapshotMessage snapshotMessage = new SyncSnapshotMessage(
                 "sync_snapshot",
-                mapService.getSnapshot(mapId, role));
+                mapService.getSnapshot(mapId, actor));
         sendJson(session, snapshotMessage);
     }
 
