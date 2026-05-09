@@ -1,6 +1,6 @@
-package io.simplehex.map.transport;
+package io.simplehex.map.application;
 
-public record FactionDto(
+public record MapFactionView(
         String id,
         String label,
         String color

@@ -28,7 +28,7 @@ public class MapController {
             @PathVariable String mapId,
             HttpServletRequest request
     ) {
-        return mapService.getSnapshot(mapId, demoSessionService.requireActor(request, mapId));
+        return MapTransportMapper.toResponse(mapService.getSnapshot(mapId, demoSessionService.requireActor(request, mapId)));
     }
 
     @PostMapping("/{mapId}/commands")
@@ -37,6 +37,6 @@ public class MapController {
             HttpServletRequest httpRequest,
             @Valid @RequestBody MapCommandRequest commandRequest
     ) {
-        return mapService.applyCommand(mapId, commandRequest, demoSessionService.requireActor(httpRequest, mapId));
+        return MapTransportMapper.toResponse(mapService.applyCommand(mapId, commandRequest, demoSessionService.requireActor(httpRequest, mapId)));
     }
 }

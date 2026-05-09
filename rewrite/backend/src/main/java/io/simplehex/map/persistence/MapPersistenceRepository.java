@@ -4,11 +4,6 @@ import io.simplehex.map.application.MapCommandException;
 import io.simplehex.map.domain.ActorRole;
 import io.simplehex.map.domain.HexCoord;
 import io.simplehex.map.domain.TerrainType;
-import io.simplehex.map.transport.CellSnapshotDto;
-import io.simplehex.map.transport.CellTerritoryCommandRequest;
-import io.simplehex.map.transport.CellVisibilityCommandRequest;
-import io.simplehex.map.transport.FeatureVisibilityCommandRequest;
-import io.simplehex.map.transport.TerrainCommandRequest;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,11 +12,11 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
-public class JpaMapRepository {
+public class MapPersistenceRepository {
 
     private final EntityManager entityManager;
 
-    public JpaMapRepository(EntityManager entityManager) {
+    public MapPersistenceRepository(EntityManager entityManager) {
         this.entityManager = entityManager;
     }
 
@@ -34,7 +29,7 @@ public class JpaMapRepository {
         return Optional.of(new MapPersistenceRecord(entity.getMapId(), entity.getRevision()));
     }
 
-    public List<CellSnapshotDto> findCells(String mapId, ActorRole role) {
+    public List<MapCellRecord> findCells(String mapId, ActorRole role) {
         String jpql = role == ActorRole.PLAYER
                 ? """
                         select cell
@@ -53,7 +48,7 @@ public class JpaMapRepository {
                 .setParameter("mapId", mapId)
                 .getResultList()
                 .stream()
-                .map(cell -> new CellSnapshotDto(
+                .map(cell -> new MapCellRecord(
                         cell.getId().getQ(),
                         cell.getId().getR(),
                         TerrainType.fromValue(cell.getTerrain()),
@@ -133,60 +128,92 @@ public class JpaMapRepository {
         entity.setTerritoryFactionId(territoryFactionId);
     }
 
-    public void insertTerrainCommandLog(String mapId, TerrainCommandRequest request, ActorRole actorRole, long sequence) {
+    public void insertTerrainCommandLog(
+            String mapId,
+            String operationId,
+            String commandType,
+            ActorRole actorRole,
+            HexCoord cell,
+            TerrainType terrain,
+            long sequence
+    ) {
         entityManager.persist(new MapOperationLogEntity(
-                new MapOperationLogId(mapId, request.operationId()),
+                new MapOperationLogId(mapId, operationId),
                 sequence,
-                request.type(),
+                commandType,
                 actorRole.value(),
-                request.cell().q(),
-                request.cell().r(),
-                request.terrain().value(),
+                cell.q(),
+                cell.r(),
+                terrain.value(),
                 null,
                 null,
                 null));
     }
 
-    public void insertVisibilityCommandLog(String mapId, CellVisibilityCommandRequest request, ActorRole actorRole, long sequence) {
+    public void insertVisibilityCommandLog(
+            String mapId,
+            String operationId,
+            String commandType,
+            ActorRole actorRole,
+            HexCoord cell,
+            boolean terrainHidden,
+            long sequence
+    ) {
         entityManager.persist(new MapOperationLogEntity(
-                new MapOperationLogId(mapId, request.operationId()),
+                new MapOperationLogId(mapId, operationId),
                 sequence,
-                request.type(),
+                commandType,
                 actorRole.value(),
-                request.cell().q(),
-                request.cell().r(),
+                cell.q(),
+                cell.r(),
                 null,
-                request.terrainHidden(),
+                terrainHidden,
                 null,
                 null));
     }
 
-    public void insertFeatureVisibilityCommandLog(String mapId, FeatureVisibilityCommandRequest request, ActorRole actorRole, long sequence) {
+    public void insertFeatureVisibilityCommandLog(
+            String mapId,
+            String operationId,
+            String commandType,
+            ActorRole actorRole,
+            HexCoord cell,
+            boolean featureHidden,
+            long sequence
+    ) {
         entityManager.persist(new MapOperationLogEntity(
-                new MapOperationLogId(mapId, request.operationId()),
+                new MapOperationLogId(mapId, operationId),
                 sequence,
-                request.type(),
+                commandType,
                 actorRole.value(),
-                request.cell().q(),
-                request.cell().r(),
+                cell.q(),
+                cell.r(),
                 null,
                 null,
-                request.featureHidden(),
+                featureHidden,
                 null));
     }
 
-    public void insertTerritoryCommandLog(String mapId, CellTerritoryCommandRequest request, ActorRole actorRole, long sequence) {
+    public void insertTerritoryCommandLog(
+            String mapId,
+            String operationId,
+            String commandType,
+            ActorRole actorRole,
+            HexCoord cell,
+            String territoryFactionId,
+            long sequence
+    ) {
         entityManager.persist(new MapOperationLogEntity(
-                new MapOperationLogId(mapId, request.operationId()),
+                new MapOperationLogId(mapId, operationId),
                 sequence,
-                request.type(),
+                commandType,
                 actorRole.value(),
-                request.cell().q(),
-                request.cell().r(),
+                cell.q(),
+                cell.r(),
                 null,
                 null,
                 null,
-                request.territoryFactionId()));
+                territoryFactionId));
     }
 
     public void resetSeedData() {

@@ -1,10 +1,11 @@
-package io.simplehex.map.transport;
+package io.simplehex.map.application;
 
+import io.simplehex.map.domain.HexCoord;
 import io.simplehex.map.domain.TerrainType;
 
-public record AppliedMapCommandDto(
+public record AppliedMapCommand(
         String type,
-        CellRefDto cell,
+        HexCoord cell,
         TerrainType terrain,
         Boolean terrainHidden,
         Boolean featureHidden,

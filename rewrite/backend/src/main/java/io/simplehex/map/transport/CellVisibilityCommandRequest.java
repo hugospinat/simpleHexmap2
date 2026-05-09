@@ -1,5 +1,7 @@
 package io.simplehex.map.transport;
 
+import io.simplehex.map.application.SetCellVisibilityCommand;
+import io.simplehex.map.domain.HexCoord;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -7,7 +9,7 @@ import jakarta.validation.constraints.NotNull;
 public record CellVisibilityCommandRequest(
         @NotBlank String type,
         @NotBlank String operationId,
-        @NotNull @Valid CellRefDto cell,
+        @NotNull @Valid HexCoord cell,
         boolean terrainHidden
-) implements MapCommandRequest {
+) implements MapCommandRequest, SetCellVisibilityCommand {
 }

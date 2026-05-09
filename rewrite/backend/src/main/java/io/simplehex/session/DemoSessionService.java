@@ -91,21 +91,21 @@ public class DemoSessionService {
     }
 
     private SessionResponse toResponse(AuthenticatedActor actor) {
-        return new SessionResponse(toActorDto(actor), actorsById.values().stream()
-                .map(this::toActorDto)
+        return new SessionResponse(toActorResponse(actor), actorsById.values().stream()
+                .map(this::toActorResponse)
                 .toList());
     }
 
-    private SessionActorDto toActorDto(AuthenticatedActor actor) {
-        return new SessionActorDto(
+    private SessionActorResponse toActorResponse(AuthenticatedActor actor) {
+        return new SessionActorResponse(
                 actor.actorId(),
                 actor.displayName(),
                 actor.role(),
                 actor.mapMemberships().stream().sorted().toList());
     }
 
-    private SessionActorDto toActorDto(SessionActorDefinition actor) {
-        return new SessionActorDto(
+    private SessionActorResponse toActorResponse(SessionActorDefinition actor) {
+        return new SessionActorResponse(
                 actor.actorId(),
                 actor.displayName(),
                 actor.role(),

@@ -1,7 +1,7 @@
 package io.simplehex.map.persistence;
 
-import io.simplehex.map.application.MapDataInitializer;
 import io.simplehex.map.application.MapService;
+import io.simplehex.map.bootstrap.DemoMapBootstrap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -32,7 +32,7 @@ class MapPersistenceIntegrationTest {
     private MapService mapService;
 
     @Autowired
-    private MapDataInitializer mapDataInitializer;
+    private DemoMapBootstrap mapDataInitializer;
 
     @Autowired
     private EntityManager entityManager;

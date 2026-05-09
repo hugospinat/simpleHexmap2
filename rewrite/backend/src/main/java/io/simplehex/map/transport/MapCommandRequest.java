@@ -1,5 +1,6 @@
 package io.simplehex.map.transport;
 
+import io.simplehex.map.application.MapCommand;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -10,10 +11,5 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @JsonSubTypes.Type(value = FeatureVisibilityCommandRequest.class, name = "set_cell_feature_visibility"),
         @JsonSubTypes.Type(value = CellTerritoryCommandRequest.class, name = "set_cell_territory")
 })
-public interface MapCommandRequest {
-    String type();
-
-    String operationId();
-
-    CellRefDto cell();
+public interface MapCommandRequest extends MapCommand {
 }

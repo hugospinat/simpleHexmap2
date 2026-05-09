@@ -5,6 +5,6 @@ public record CommandAppliedResponse(
         String operationId,
         String mapId,
         long sequence,
-        AppliedMapCommandDto command
+        AppliedMapCommandResponse command
 ) {
 }
