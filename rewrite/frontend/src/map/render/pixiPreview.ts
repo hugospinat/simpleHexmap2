@@ -91,7 +91,7 @@ export async function mountPreviewScene(host: HTMLDivElement, renderModel: Rende
       style: {
         fill: "#f9f6ef",
         fontFamily: "Georgia, serif",
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: "700"
       }
     });
