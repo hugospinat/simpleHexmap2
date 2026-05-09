@@ -17,6 +17,7 @@ import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -38,6 +39,9 @@ class MapPersistenceIntegrationTest {
 
     @Autowired
     private TransactionTemplate transactionTemplate;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void resetMapState() {
@@ -182,6 +186,15 @@ class MapPersistenceIntegrationTest {
         Long operationCount = entityManager.createQuery("select count(log) from MapOperationLogEntity log", Long.class)
                 .getSingleResult();
         assertThat(operationCount).isEqualTo(1);
+    }
+
+    @Test
+    void appliesVersionedFlywaySchemaBeforeJpaValidation() {
+        List<String> versions = jdbcTemplate.queryForList(
+                "select version from flyway_schema_history where success = true and type = 'SQL' order by installed_rank",
+                String.class);
+
+        assertThat(versions).containsExactly("1");
     }
 
     private void clearPersistentState() {
